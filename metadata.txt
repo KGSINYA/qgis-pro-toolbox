@@ -1,5 +1,5 @@
 [general]
-name=Pro Toolbox 生产提效工具箱
+name=Pro Toolbox
 qgisMinimumVersion=3.16
 qgisMaximumVersion=3.99
 description=A hot-swappable toolbox for high-frequency GIS digitizing: crash-proof auto-save and restore, arrow-key layer cycling, numpad macro input, QA/QC pass-through, table-to-point mapping with batch map export, and template-driven Word reports. 面向高频矢量数字化生产的热插拔式提效工具箱。

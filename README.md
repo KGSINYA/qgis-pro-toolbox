@@ -212,7 +212,7 @@ cd ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins
 git clone https://github.com/KGSINYA/qgis-pro-toolbox.git qgis_pro_tools
 ```
 
-克隆后重启 QGIS，在插件管理器中勾选 **Pro Toolbox 生产提效工具箱**。
+克隆后重启 QGIS，在插件管理器中勾选 **Pro Toolbox**。
 
 ### 验证安装
 
