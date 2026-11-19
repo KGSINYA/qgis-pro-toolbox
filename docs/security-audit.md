@@ -88,7 +88,7 @@
 | `category` 合法 | ✅ | `Vector`（取值仅 Raster/Vector/Database/Mesh/Web） |
 | `tags` 逗号分隔、英文 | ✅ | `automation,digitizing,workflow,hot-reload,report,vector`（无空格） |
 | ZIP 根目录为单个文件夹 | ✅ | `qgis_pro_tools/`，仅 ASCII 字母/数字/`_`/`-`，不以数字开头 |
-| LICENSE 存在且**无扩展名** | ✅ | `LICENSE`（GPL-3.0 全文 + 版权声明），非 `LICENSE.txt` |
+| LICENSE 存在且**无扩展名** | ✅ | `LICENSE`（GPL-3.0 全文），版权声明另见 `NOTICE`，非 `LICENSE.txt` |
 | 不含 `__pycache__` / `.git` / 解压缓存 | ✅ | `build_zip.py` 强制排除 |
 | 版本号唯一 | ⚠️ 待确认 | 上传前需确认 `1.0.0` 未被同名插件占用；升级须递增 |
 | 插件图标 | ✅ | `icon.png`（256×256，metadata 声明 `icon=icon.png`）|
@@ -98,7 +98,7 @@
 ## 4. 发布前必须人工完成的 5 件事
 
 1. ✅ **已替换 GitHub 用户名占位符** → `KGSINYA`（README 7 处、`metadata.txt` 3 处）——若仓库改名需再改一次；
-2. ✅ **署名已确认**：`author=KGSINYA`、`email=kgsinya@163.com`，`LICENSE` 版权行同步为 `Copyright (C) 2026 KGSINYA <kgsinya@163.com>`；
+2. ✅ **署名已确认**：`author=KGSINYA`、`email=kgsinya@163.com`，`NOTICE` 版权行同步为 `Copyright (C) 2026 KGSINYA <kgsinya@163.com>`；
 3. ✅ **图标已确认**：使用当前 `icon.png`（256×256，深色等距图层 + 琥珀色点要素），metadata 已声明 `icon=icon.png`；
 4. **按目标 QGIS 的 Python 版本更新 `libs/*.whl`**（当前 lxml 为 cp312，若你的 QGIS 是 3.28 及更早版本，大概率是 Python 3.9）；
 5. **在 QGIS 内做一次冒烟测试**：加载插件 → 依次打开 6 个 Tab → 各触发一次核心动作（本机未安装 QGIS，本次仅完成静态检查与 ZIP 结构校验）。
@@ -114,10 +114,10 @@
 | Issues 链接 | `metadata.txt` | 14 |
 | 仓库链接 | `metadata.txt` | 15 |
 | 主页链接 | `metadata.txt` | 16 |
-| 版权行 `Copyright (C) 2026 KGSINYA <kgsinya@163.com>` | `LICENSE` | 2 |
-| 作者表 | `README.md` | 330 |
-| GitHub 用户名（4 处） | `README.md` | 13, 186, 198, 204 |
-| GitHub 用户名（作者表 2 处） | `README.md` | 332, 333 |
+| 版权行 `Copyright (C) 2026 KGSINYA <kgsinya@163.com>` | `NOTICE` | 2 |
+| 作者表 | `README.md` | 345 |
+| GitHub 用户名（4 处） | `README.md` | 13, 188, 200, 206 |
+| GitHub 用户名（作者表 2 处） | `README.md` | 347, 348 |
 | 插件目录 ID（若重命名仓库根目录） | `build_zip.py` | `PLUGIN_ID` 常量 |
 
 > 建议：`tracker`/`repository`/`homepage` 三处保持同一仓库地址，否则 QGIS 插件页的「Bug Tracker」与「Source Code」会指向不同位置。

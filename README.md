@@ -111,7 +111,8 @@ qgis-pro-toolbox/
 ├── main.py                 # 微内核：Dock + Tab + 模块扫描器
 ├── base_addon.py           # 21 行的模块契约
 ├── metadata.txt            # QGIS 官方插件元数据
-├── LICENSE                 # GPL-3.0（无扩展名，官方要求）
+├── LICENSE                 # GPL-3.0 全文（无扩展名，官方要求）
+├── NOTICE                  # 版权声明与第三方依赖许可
 ├── icon.png                # 插件图标（metadata 中声明）
 ├── build_zip.py            # 一键打包为可上传的 ZIP
 ├── addons/
@@ -332,7 +333,7 @@ PR 与 Issue 都非常欢迎，尤其是：
 
 ## 📄 许可证
 
-本项目基于 [GNU General Public License v3.0](LICENSE) 发布。
+本项目基于 [GNU General Public License v3.0](LICENSE) 发布（`LICENSE` 为 GPL-3.0 全文，版权归属与第三方依赖许可见 [NOTICE](NOTICE)）。
 QGIS 官方插件仓库要求所有插件使用 GPL v2 或更高版本协议，本项目选择 GPL-3.0。
 
 ---
