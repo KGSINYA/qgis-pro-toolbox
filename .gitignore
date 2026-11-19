@@ -1,0 +1,51 @@
+# ============================================================
+#  Pro Toolbox — .gitignore
+#  Python + QGIS 插件工程
+# ============================================================
+
+# ---------------- Python ----------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+build/
+dist/
+*.egg-info/
+.eggs/
+.installed.cfg
+
+# ---------------- 虚拟环境 ----------------
+.venv/
+venv/
+env/
+
+# ---------------- 编辑器 / 操作系统 ----------------
+.vscode/
+.idea/
+*.iml
+*.code-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+*.bak
+*.tmp
+*.log
+
+# ---------------- 离线依赖（libs/） ----------------
+# 只把 wheel 版本库化。首次运行会在 libs/ 内解压出真正的包，
+# 这些解压产物、dist-info 和 .unpacked 戳记一律不入库。
+libs/*
+!libs/*.whl
+libs/_extracted/
+*.whl.unpacked
+
+# ---------------- 插件运行时产物 ----------------
+# 自动存档目录（Backup_YYYYmmdd_HHMMSS/，若把存档目录设在插件内）
+Backup_*/
+# 小键盘宏的本地配置，可能含业务文本，绝不入库
+numpad_macro_config.json
+# 打包产物
+*.zip
