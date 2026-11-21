@@ -79,6 +79,7 @@ EXCLUDED_FILES = {
     "desktop.ini",
     ".DS_Store",
     "Thumbs.db",
+    "symbology-style.db",      # QGIS-generated local style database, never part of the plugin
 }
 
 EXCLUDED_SUFFIXES = {

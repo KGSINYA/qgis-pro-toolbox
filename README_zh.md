@@ -18,7 +18,7 @@
 
 </div>
 
-> **English** — Pro Toolbox is a hot-swappable addon shell for QGIS: one 21-line `BaseAddon` contract, a runtime scanner, and offline wheels. Drop a `.py` file into `addons/`, click **Rescan**, and a new tab appears without restarting QGIS. Six production modules ship in the box: crash-proof autosave with one-click restore, arrow-key layer cycling, numpad macro input, semi-automatic QA/QC, table-to-point mapping with batch map export, and template-driven Word reports. No network calls, no telemetry.
+> **English** — Pro Toolbox is a hot-swappable addon shell for QGIS: one 32-line `BaseAddon` contract, a runtime scanner, and offline wheels. Drop a `.py` file into `addons/`, click **Rescan**, and a new tab appears without restarting QGIS. Six production modules ship in the box: crash-proof autosave with one-click restore, arrow-key layer cycling, numpad macro input, semi-automatic QA/QC, table-to-point mapping with batch map export, and template-driven Word reports. No network calls, no telemetry.
 
 ---
 
@@ -232,28 +232,30 @@ git clone https://github.com/KGSINYA/qgis-pro-toolbox.git pro_toolbox
 
 ## 🔌 内网离线依赖（Zero-Config）
 
-`libs/` 中内置了三个 wheel：
+`libs/` 中内置了四个 wheel：
 
 | Wheel | 用途 |
 | --- | --- |
 | `python_docx-1.2.0-py3-none-any.whl` | Word 报表 |
-| `lxml-6.1.3-cp312-cp312-win_amd64.whl` | python-docx 的 XML 后端 |
 | `typing_extensions-4.16.0-py3-none-any.whl` | 类型标注兼容层 |
+| `lxml-6.1.3-cp39-cp39-win_amd64.whl` | 适配 QGIS ≤ 3.39（Python 3.9 / Windows x64） |
+| `lxml-6.1.3-cp312-cp312-win_amd64.whl` | 适配 QGIS ≥ 3.40（Python 3.12 / Windows x64） |
 
-首次使用 Word 报表时，`06_word_report.py` 会把 wheel 解压到插件目录并 `sys.path.insert`，同时写入 `*.whl.unpacked` 戳记，第二次启动直接复用。
+首次使用 Word 报表时，`06_word_report.py` 会**按当前解释器**挑选匹配的 `lxml` wheel，把兼容的 wheel 解压到 `libs/_extracted/<ABI 标签>`（如 `libs/_extracted/cp39`），再把该目录加入 `sys.path`，同时写入 `*.whl.unpacked` 戳记；第二次启动直接复用。另一个 Python 版本的 wheel 会被忽略，所以同一个 ZIP 通吃两代 QGIS。
 
 ### ⚠️ 运行时版本要求（必读）
 
-`libs/` 里的 wheel 是**预编译二进制**，与 QGIS 自带的 Python 版本强绑定。当前内置的 `lxml-6.1.3-cp312-cp312-win_amd64.whl` 为 **CPython 3.12 / Windows x64** 编译：
+`libs/` 里的 `lxml` wheel 是**预编译二进制**，与 QGIS 自带的 Python 版本强绑定。两代 Windows 构建都已内置：
 
 | 你的 QGIS（Windows 官方构建） | 自带 Python | 内置 wheel | 需要做什么 |
 | --- | --- | --- | --- |
-| **3.34 及以上** | **3.12** | ✅ 开箱即用 | 无 |
-| 3.16 – 3.32 | 3.9 | ❌ `import lxml` 报 ABI 不匹配 | 换成 `cp39` 的 lxml wheel |
+| **3.40 及以上** | **3.12** | `lxml-…cp312…` | 无 |
+| **3.16 – 3.39** | **3.9** | `lxml-…cp39…` | 无 |
 | macOS / Linux | 各自版本 | ❌ 平台不匹配 | 换成对应 `--platform` 的 wheel |
 
-> 限制来自 wheel 的二进制 ABI（`cp312` 只能跑在 Python 3.12 上），**不是插件代码的限制**。
-> 其余 5 个模块（自动存档、图层轮播、宏录入、质检、表格转点）完全不依赖 `libs/`，在 QGIS 3.16+ 均可正常运行；**只有「Word 报表」模块需要版本匹配的 wheel**。
+> Windows 版 QGIS 3.34.1 自带 **Python 3.9.5**，会用到内置的 `cp39` wheel。
+> 限制来自 wheel 的二进制 ABI，**不是插件代码的限制**。
+> 其余 5 个模块（自动存档、图层轮播、宏录入、质检、表格转点）完全不依赖 `libs/`，在 QGIS 3.16+ 均可正常运行。
 
 查当前 QGIS 的 Python 版本：**插件 → Python 控制台**，执行
 
@@ -264,11 +266,11 @@ import sys; print(sys.version)
 在联网机器上重新抓取匹配的 wheel（不锁定版本，pip 会自动选择适配该 Python 的最新版）：
 
 ```bash
-# QGIS 3.34+（Python 3.12 / Windows x64）
-python -m pip download lxml --only-binary=:all: --platform win_amd64 --python-version 3.12 --implementation cp -d libs
-
-# QGIS 3.16 – 3.32（Python 3.9 / Windows x64）
+# QGIS 3.16 – 3.39（Python 3.9 / Windows x64）
 python -m pip download lxml --only-binary=:all: --platform win_amd64 --python-version 39 --implementation cp -d libs
+
+# QGIS 3.40+（Python 3.12 / Windows x64）
+python -m pip download lxml --only-binary=:all: --platform win_amd64 --python-version 3.12 --implementation cp -d libs
 ```
 
 > `pandas` / `openpyxl` 等表格依赖由 QGIS 自带，无需打包。
@@ -306,7 +308,7 @@ A：检查三件事 —— 文件名不是 `_` 开头、类继承了 `BaseAddon`
 A：存在你在面板中选择的目录，每次存档生成 `Backup_时间戳/` 子目录。面板里可设置最多保留份数，超出后自动删除最旧的一份。
 
 **Q：Word 报表报 `No module named 'docx'` 或 `ImportError: DLL load failed`？**
-A：`libs/` 中的 wheel 与当前 QGIS 的 Python 版本不匹配（内置为 `cp312`，对应 QGIS **3.34+**；3.16–3.32 为 Python 3.9，需要 `cp39` 的 lxml）。替换方法见[内网离线依赖](#-内网离线依赖-zero-config) 的「运行时版本要求」。
+A：`libs/` 中的 wheel 与当前 QGIS 的 Python 版本不匹配。Windows 两代 ABI 都已内置（`cp39` 对应 QGIS ≤ 3.39 / Python 3.9，`cp312` 对应 QGIS ≥ 3.40 / Python 3.12）；macOS/Linux 需换成对应平台的 wheel。替换方法见[内网离线依赖](#-内网离线依赖-zero-config) 的「运行时版本要求」。
 
 **Q：杀毒软件对宏录入报警？**
 A：`03` 模块使用 Win32 `RegisterHotKey` + `SendInput` 实现全局热键与文本注入，这是输入法、自动化工具的常规做法，不涉及注入其他进程。介意可停用该模块。

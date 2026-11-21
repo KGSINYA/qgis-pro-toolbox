@@ -8,7 +8,7 @@ from ctypes import wintypes
 from qgis.PyQt.QtCore import Qt, QThread, pyqtSignal
 from qgis.PyQt.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QTextEdit, QCheckBox
 
-from base_addon import BaseAddon
+from base_addon import BaseAddon, tr
 
 # ---------- Windows low-level key hooks and simulated input ----------
 IS_WINDOWS = os.name == "nt"

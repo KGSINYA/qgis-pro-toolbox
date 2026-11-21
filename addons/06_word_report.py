@@ -12,7 +12,7 @@ from qgis.PyQt.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                                  QGroupBox)
 from qgis.core import QgsProject, QgsMapLayer, Qgis
 
-from base_addon import BaseAddon
+from base_addon import BaseAddon, tr
 
 # Placeholders for global module objects
 Document = None
@@ -23,7 +23,8 @@ WD_TABLE_ALIGNMENT = None
 def load_docx_from_libs(plugin_dir):
     """
     [Offline, install-free engine for intranet deployments]
-    Scans the libs folder of the plugin, auto-unpacks and mounts its .whl files onto the Python path.
+    Scans the libs folder of the plugin, unpacks the .whl packages that match
+    the running Python ABI, and mounts them on sys.path.
     No OSGeo4W Shell, no pip, no internet connection required!
     """
     global Document, Cm, Inches, WD_TABLE_ALIGNMENT
@@ -33,23 +34,41 @@ def load_docx_from_libs(plugin_dir):
     libs_dir = os.path.join(plugin_dir, "libs")
     os.makedirs(libs_dir, exist_ok=True)
 
-    # 1. Unpack every .whl file in the libs folder in place (a .whl is just a zip archive)
-    for fname in os.listdir(libs_dir):
-        if fname.lower().endswith(".whl"):
-            whl_path = os.path.join(libs_dir, fname)
-            stamp_file = whl_path + ".unpacked"
-            if not os.path.exists(stamp_file):
-                try:
-                    with zipfile.ZipFile(whl_path, 'r') as zf:
-                        zf.extractall(libs_dir)
-                    with open(stamp_file, 'w', encoding='utf-8') as f:
-                        f.write("ok")
-                except Exception as e:
-                    print(tr(f"[WordReport] 自动解压 {fname} 失败: {e}", f"[WordReport] Failed to unpack {fname}: {e}"))
+    tag = f"cp{sys.version_info.major}{sys.version_info.minor}"
+    cache_dir = os.path.join(libs_dir, "_extracted", tag)
 
-    # 2. Put the libs folder at the front of the Python module search path
-    if libs_dir not in sys.path:
-        sys.path.insert(0, libs_dir)
+    def _matches_interpreter(fname):
+        # Pure-Python wheels run anywhere; binary wheels must match the ABI of
+        # the QGIS build (cp39 for QGIS <= 3.39, cp312 for newer builds).
+        return "py3-none-any" in fname or f"-{tag}-" in fname
+
+    wheels = [f for f in os.listdir(libs_dir)
+              if f.lower().endswith(".whl") and _matches_interpreter(f)]
+
+    # 1. Unpack the matching wheels into a per-interpreter cache
+    #    (a .whl is just a zip archive; mixing cp39 and cp312 files in one
+    #    folder would shadow each other, hence the _extracted/<tag> subfolder).
+    if wheels:
+        os.makedirs(cache_dir, exist_ok=True)
+
+    for fname in wheels:
+        whl_path = os.path.join(libs_dir, fname)
+        stamp_file = os.path.join(cache_dir, fname + ".unpacked")
+        if os.path.exists(stamp_file):
+            continue
+        try:
+            with zipfile.ZipFile(whl_path, 'r') as zf:
+                zf.extractall(cache_dir)
+            with open(stamp_file, 'w', encoding='utf-8') as f:
+                f.write("ok")
+        except Exception as e:
+            print(tr(f"[WordReport] 自动解压 {fname} 失败: {e}", f"[WordReport] Failed to unpack {fname}: {e}"))
+
+    # 2. Put the cache folder at the front of the Python module search path
+    if wheels:
+        while cache_dir in sys.path:
+            sys.path.remove(cache_dir)
+        sys.path.insert(0, cache_dir)
 
     # 3. Try to import python-docx
     try:

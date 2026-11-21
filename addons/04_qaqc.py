@@ -4,7 +4,7 @@ from qgis.PyQt.QtGui import QKeySequence
 from qgis.PyQt.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QComboBox, QShortcut
 from qgis.core import QgsProject, QgsField, QgsFeatureRequest
 
-from base_addon import BaseAddon
+from base_addon import BaseAddon, tr
 
 class QaqcAddon(BaseAddon):
     title = tr("✅ 属性审查", "✅ Attribute Review")

@@ -2,6 +2,7 @@
 import os
 import sys
 import inspect
+import importlib
 import importlib.util
 
 from qgis.PyQt.QtCore import Qt
@@ -16,6 +17,46 @@ if current_dir not in sys.path:
 
 from base_addon import BaseAddon
 from i18n import LANG_EN, LANG_ZH, current_language, set_language, tr
+
+
+def _ensure_core_modules():
+    """Pin this plugin folder to ``sys.path[0]`` and return fresh core modules.
+
+    Returns ``(i18n_module, base_addon_module)``.  A copy of ``i18n`` or
+    ``base_addon`` cached in ``sys.modules`` by another plugin — or by an older
+    Pro Toolbox release — silently shadows ours and is exactly how an addon can
+    end up without ``tr`` even though this package ships it.
+    """
+    global tr, current_language, set_language
+
+    plugin_dir = os.path.abspath(current_dir)
+    sys.path[:] = [p for p in sys.path if os.path.abspath(p) != plugin_dir]
+    sys.path.insert(0, plugin_dir)
+
+    def _load(name, required_attrs):
+        module = sys.modules.get(name)
+        module_file = getattr(module, "__file__", None)
+        foreign = module is not None and (
+            not module_file
+            or os.path.abspath(os.path.dirname(module_file)) != plugin_dir
+        )
+        incomplete = module is not None and any(
+            not hasattr(module, attr) for attr in required_attrs
+        )
+        if foreign or incomplete:
+            sys.modules.pop(name, None)
+            module = None
+        if module is None:
+            module = importlib.import_module(name)
+        return module
+
+    i18n_module = _load("i18n", ("tr", "current_language", "set_language"))
+    base_addon_module = _load("base_addon", ("BaseAddon", "tr"))
+
+    tr = i18n_module.tr
+    current_language = i18n_module.current_language
+    set_language = i18n_module.set_language
+    return i18n_module, base_addon_module
 
 
 class ProToolboxPlugin:
@@ -192,6 +233,10 @@ class ProToolboxPlugin:
 
     def load_all_addons(self):
         """Scan addons/*.py, instantiate every addon and rebuild the tab pages."""
+        i18n_module, base_addon_module = _ensure_core_modules()
+        tr = i18n_module.tr  # shadow the module-level ``tr`` with the live one
+        base_addon_cls = base_addon_module.BaseAddon
+
         self.unload_all_addons()
 
         if not os.path.exists(self.addons_dir):
@@ -209,10 +254,18 @@ class ProToolboxPlugin:
             try:
                 spec = importlib.util.spec_from_file_location(module_name, filepath)
                 module = importlib.util.module_from_spec(spec)
+                # Safety net: pre-inject the i18n helpers so a module that
+                # forgets ``from base_addon import tr`` still cannot fail with
+                # ``name 'tr' is not defined``.
+                module.tr = tr
+                module.BaseAddon = base_addon_cls
+                module.current_language = i18n_module.current_language
+                module.language_label = i18n_module.language_label
+                module.set_language = i18n_module.set_language
                 spec.loader.exec_module(module)
 
                 for name, obj in inspect.getmembers(module, inspect.isclass):
-                    if getattr(obj, '_is_pro_addon', False) and obj is not BaseAddon and obj.__name__ != 'BaseAddon':
+                    if getattr(obj, '_is_pro_addon', False) and obj is not base_addon_cls and obj.__name__ != 'BaseAddon':
                         addon_classes.append(obj)
             except Exception as e:
                 self.iface.messageBar().pushMessage(

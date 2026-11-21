@@ -49,3 +49,5 @@ Backup_*/
 numpad_macro_config.json
 # 打包产物
 *.zip
+# QGIS 打开项目时生成的自定义符号库，属于本机文件，不入库也不进包
+symbology-style.db

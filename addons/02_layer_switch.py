@@ -4,7 +4,7 @@ from qgis.PyQt.QtGui import QKeySequence
 from qgis.PyQt.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QComboBox, QShortcut
 from qgis.core import QgsProject, Qgis
 
-from base_addon import BaseAddon
+from base_addon import BaseAddon, tr
 
 class LayerSwitchAddon(BaseAddon):
     title = tr("🗂️ 图层切换", "🗂️ Layer switcher")

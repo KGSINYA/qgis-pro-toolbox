@@ -21,7 +21,7 @@ from qgis.core import (QgsProject, QgsVectorFileWriter, QgsField, QgsVectorLayer
                        QgsCoordinateTransform, QgsCsException, Qgis)
 from qgis.gui import QgsProjectionSelectionWidget, QgsVertexMarker, QgsMapToolEmitPoint
 
-from base_addon import BaseAddon
+from base_addon import BaseAddon, tr
 
 class ExcelMapAddon(BaseAddon):
     title = tr("📊 表格转点制图", "📊 Table to Points")
@@ -36,9 +36,11 @@ class ExcelMapAddon(BaseAddon):
 
     def unload(self):
         """Remove the crosshair markers and the pick tool when the module unloads or hot-reloads"""
-        self.clear_markers()
-        if self.map_tool and self.iface.mapCanvas().mapTool() == self.map_tool:
-            self.iface.mapCanvas().unsetMapTool(self.map_tool)
+        canvas = self.iface.mapCanvas() if self.iface else None
+        if canvas:
+            self.clear_markers()
+            if self.map_tool and canvas.mapTool() == self.map_tool:
+                canvas.unsetMapTool(self.map_tool)
         self.map_tool = None
 
     def setup_ui(self, parent_widget):

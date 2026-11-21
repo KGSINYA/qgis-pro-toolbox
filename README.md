@@ -233,28 +233,36 @@ Open the toolbox — the status label should read `Loaded modules: 6`. If an add
 
 ## 🔌 Offline dependencies (zero config)
 
-Three wheels are bundled in `libs/`:
+Four wheels are bundled in `libs/`:
 
 | Wheel | Purpose |
 | --- | --- |
 | `python_docx-1.2.0-py3-none-any.whl` | Word reports |
-| `lxml-6.1.3-cp312-cp312-win_amd64.whl` | XML backend for python-docx |
 | `typing_extensions-4.16.0-py3-none-any.whl` | Typing compatibility layer |
+| `lxml-6.1.3-cp39-cp39-win_amd64.whl` | lxml for QGIS ≤ 3.39 (Python 3.9 / Windows x64) |
+| `lxml-6.1.3-cp312-cp312-win_amd64.whl` | lxml for QGIS ≥ 3.40 (Python 3.12 / Windows x64) |
 
-The first time the Word module runs, `06_word_report.py` unpacks the wheels into the plugin directory, inserts them into `sys.path` and writes a `*.whl.unpacked` marker; later launches reuse the unpacked copy.
+On first use, `06_word_report.py` picks the `lxml` wheel that matches the running
+interpreter, unpacks the compatible wheels into `libs/_extracted/<abi tag>`
+(e.g. `libs/_extracted/cp39`), puts that folder on `sys.path`, and writes a
+`*.whl.unpacked` marker; later launches reuse the unpacked copy. Wheels for the
+other Python version are ignored, so one ZIP works on both QGIS generations.
 
 ### ⚠️ Runtime requirements (read this first)
 
-The wheels in `libs/` are **precompiled binaries** tied to the Python version inside QGIS. The bundled `lxml-6.1.3-cp312-cp312-win_amd64.whl` targets **CPython 3.12 / Windows x64**:
+The `lxml` wheels in `libs/` are **precompiled binaries** tied to the Python
+version inside QGIS. Both Windows generations are covered out of the box:
 
 | Your QGIS (official Windows builds) | Bundled Python | Bundled wheel | What to do |
 | --- | --- | --- | --- |
-| **3.34 and newer** | **3.12** | ✅ works out of the box | nothing |
-| 3.16 – 3.32 | 3.9 | ❌ `import lxml` fails with an ABI mismatch | swap in a `cp39` lxml wheel |
+| **3.40 and newer** | **3.12** | `lxml-…cp312…` | nothing |
+| **3.16 – 3.39** | **3.9** | `lxml-…cp39…` | nothing |
 | macOS / Linux | varies | ❌ wrong platform | fetch the wheel for your `--platform` |
 
-> The limit comes from the wheel ABI (`cp312` only runs on Python 3.12), **not from the plugin code**.
-> The other five modules (autosave, layer cycling, numpad macros, QA/QC, table to points) do not touch `libs/` at all and run on QGIS 3.16+; **only the Word module needs a matching wheel**.
+> QGIS 3.34.1 on Windows bundles **Python 3.9.5** and therefore uses the
+> `cp39` wheel. The limit comes from the wheel ABI, **not from the plugin
+> code**. The other five modules (autosave, layer cycling, numpad macros,
+> QA/QC, table to points) do not touch `libs/` at all and run on QGIS 3.16+.
 
 Check the Python version of your QGIS — **Plugins → Python Console**:
 
@@ -265,11 +273,11 @@ import sys; print(sys.version)
 Fetch a matching wheel on a machine with internet access (no version pin — pip picks the newest build for that Python):
 
 ```bash
-# QGIS 3.34+ (Python 3.12 / Windows x64)
-python -m pip download lxml --only-binary=:all: --platform win_amd64 --python-version 3.12 --implementation cp -d libs
-
-# QGIS 3.16 – 3.32 (Python 3.9 / Windows x64)
+# QGIS 3.16 – 3.39 (Python 3.9 / Windows x64)
 python -m pip download lxml --only-binary=:all: --platform win_amd64 --python-version 39 --implementation cp -d libs
+
+# QGIS 3.40+ (Python 3.12 / Windows x64)
+python -m pip download lxml --only-binary=:all: --platform win_amd64 --python-version 3.12 --implementation cp -d libs
 ```
 
 > Spreadsheet libraries such as `pandas` / `openpyxl` ship with QGIS and are not bundled.
@@ -307,7 +315,7 @@ A: Check three things — the file name does not start with `_`, the class subcl
 A: To the folder selected in the panel, one `Backup_<timestamp>/` folder per run. Set the maximum number of snapshots there; older ones are deleted automatically.
 
 **Q: The Word module raises `No module named 'docx'` or `ImportError: DLL load failed`.**
-A: The wheels in `libs/` do not match your QGIS Python (bundled `cp312` targets QGIS **3.34+**; 3.16–3.32 run Python 3.9 and need a `cp39` lxml). See [Runtime requirements](#️-runtime-requirements-read-this-first).
+A: The wheels in `libs/` do not match your QGIS Python. Both Windows ABIs ship in the box (`cp39` for QGIS ≤ 3.39 / Python 3.9, `cp312` for QGIS ≥ 3.40 / Python 3.12); macOS/Linux need a wheel built for that platform. See [Runtime requirements](#️-runtime-requirements-read-this-first).
 
 **Q: My antivirus flags the numpad module.**
 A: Module `03` uses Win32 `RegisterHotKey` + `SendInput` for global hotkeys and text injection — standard practice for input methods and automation tools, and it never injects into other processes. Disable the module if you prefer.
