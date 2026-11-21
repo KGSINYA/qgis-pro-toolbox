@@ -10,9 +10,9 @@ from qgis.PyQt.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel, Q
 
 from base_addon import BaseAddon
 
-# ---------- Windows 底层按键钩子与模拟输入 ----------
+# ---------- Windows low-level key hooks and simulated input ----------
 IS_WINDOWS = os.name == "nt"
-# user32 只在 Windows 上存在；其他平台把模块标记为非插件，由主程序自动跳过
+# user32 exists only on Windows; on other platforms the module is flagged as a non-addon and the host skips it
 user32 = ctypes.WinDLL('user32', use_last_error=True) if IS_WINDOWS else None
 WM_HOTKEY = 0x0312
 PM_REMOVE = 0x0001
@@ -89,11 +89,11 @@ class HotkeyThread(QThread):
         self.is_running = False
         self.wait()
 
-# ---------- 模块主体 ----------
+# ---------- Addon body ----------
 class NumpadMacroAddon(BaseAddon):
-    title = "⚡ 快捷输入"
+    title = tr("⚡ 快捷输入", "⚡ Quick Input")
     order = 3
-    # 非 Windows 平台直接隐藏本模块（主程序按 _is_pro_addon 过滤）
+    # Hide this addon entirely on non-Windows platforms (the host filters on _is_pro_addon)
     _is_pro_addon = IS_WINDOWS
 
     def __init__(self, iface, dock_widget, plugin_dir):
@@ -114,27 +114,27 @@ class NumpadMacroAddon(BaseAddon):
 
         for i in range(1, 6):
             h_layout = QHBoxLayout()
-            lbl = QLabel(f"数字键 {i}")
+            lbl = QLabel(tr(f"数字键 {i}", f"Key {i}"))
             lbl.setFixedWidth(50)
             txt = QTextEdit()
             txt.setFixedHeight(45)
-            txt.setPlaceholderText(f"小键盘 {i} 输出内容...")
+            txt.setPlaceholderText(tr(f"小键盘 {i} 输出内容...", f"Numpad {i} output..."))
             self.text_boxes[i] = txt
 
             h_layout.addWidget(lbl)
             h_layout.addWidget(txt)
             layout.addLayout(h_layout)
 
-        self.auto_enter_chk = QCheckBox("输出完毕后自动发送【回车键】")
+        self.auto_enter_chk = QCheckBox(tr("输出完毕后自动发送【回车键】", "Press Enter automatically after sending"))
         layout.addWidget(self.auto_enter_chk)
         layout.addSpacing(5)
 
         btn_layout = QHBoxLayout()
-        self.btn_macro_toggle = QPushButton("▶ 启动快捷服务")
+        self.btn_macro_toggle = QPushButton(tr("▶ 启动快捷服务", "▶ Start hotkey service"))
         self.btn_macro_toggle.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold; padding: 8px;")
         self.btn_macro_toggle.clicked.connect(self.toggle_macro)
 
-        btn_macro_save = QPushButton("💾 保存配置")
+        btn_macro_save = QPushButton(tr("💾 保存配置", "💾 Save configuration"))
         btn_macro_save.setStyleSheet("padding: 8px;")
         btn_macro_save.clicked.connect(self.save_macro_config)
 
@@ -142,7 +142,7 @@ class NumpadMacroAddon(BaseAddon):
         btn_layout.addWidget(btn_macro_save)
         layout.addLayout(btn_layout)
 
-        self.macro_status_lbl = QLabel("⚫ 当前状态: 休眠中")
+        self.macro_status_lbl = QLabel(tr("⚫ 当前状态: 休眠中", "⚫ Status: idle"))
         self.macro_status_lbl.setStyleSheet("color: gray; font-weight: bold; margin-top: 10px;")
         self.macro_status_lbl.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.macro_status_lbl)
@@ -160,10 +160,10 @@ class NumpadMacroAddon(BaseAddon):
             self.shortcut_thread.macro_triggered.connect(self.execute_macro)
             self.shortcut_thread.start()
 
-            self.btn_macro_toggle.setText("⏹ 停止快捷服务")
+            self.btn_macro_toggle.setText(tr("⏹ 停止快捷服务", "⏹ Stop hotkey service"))
             self.btn_macro_toggle.setStyleSheet(
                 "background-color: #f44336; color: white; font-weight: bold; padding: 8px;")
-            self.macro_status_lbl.setText("🟢 当前状态: 运行中 (小键盘拦截已开启)")
+            self.macro_status_lbl.setText(tr("🟢 当前状态: 运行中 (小键盘拦截已开启)", "🟢 Status: running (numpad capture enabled)"))
             self.macro_status_lbl.setStyleSheet("color: #4CAF50; font-weight: bold; margin-top: 10px;")
             for box in self.text_boxes.values():
                 box.setEnabled(False)
@@ -171,10 +171,10 @@ class NumpadMacroAddon(BaseAddon):
             self.shortcut_thread.stop()
             self.shortcut_thread = None
 
-            self.btn_macro_toggle.setText("▶ 启动快捷服务")
+            self.btn_macro_toggle.setText(tr("▶ 启动快捷服务", "▶ Start hotkey service"))
             self.btn_macro_toggle.setStyleSheet(
                 "background-color: #4CAF50; color: white; font-weight: bold; padding: 8px;")
-            self.macro_status_lbl.setText("⚫ 当前状态: 休眠中")
+            self.macro_status_lbl.setText(tr("⚫ 当前状态: 休眠中", "⚫ Status: idle"))
             self.macro_status_lbl.setStyleSheet("color: gray; font-weight: bold; margin-top: 10px;")
             for box in self.text_boxes.values():
                 box.setEnabled(True)
@@ -192,7 +192,7 @@ class NumpadMacroAddon(BaseAddon):
         try:
             with open(self.config_file, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=4)
-            self.iface.messageBar().pushMessage("成功", "快捷输入配置已保存", level=0, duration=2)
+            self.iface.messageBar().pushMessage(tr("成功", "Success"), tr("快捷输入配置已保存", "Quick input configuration saved"), level=0, duration=2)
         except Exception:
             pass
 

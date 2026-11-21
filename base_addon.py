@@ -1,11 +1,17 @@
 # -*- coding: utf-8 -*-
 from qgis.PyQt.QtWidgets import QWidget
 
+# ``tr`` is re-exported here so addons need a single import line:
+#     from base_addon import BaseAddon, tr
+from i18n import current_language, language_label, set_language, tr  # noqa: F401
+
+
 class BaseAddon:
-    """所有子功能模块的标准模板"""
+    """Template that every hot-swappable addon inherits from."""
+
     _is_pro_addon = True
-    title = "🧩 未命名模块"
-    order = 99  # 数字越小，Tab页排在越前面
+    title = tr("🧩 未命名模块", "🧩 Untitled addon")
+    order = 99  # lower number = tab appears earlier
 
     def __init__(self, iface, dock_widget, plugin_dir):
         self.iface = iface
@@ -13,9 +19,14 @@ class BaseAddon:
         self.plugin_dir = plugin_dir
 
     def setup_ui(self, parent_widget: QWidget):
-        """在这里绘制该模块的界面"""
+        """Draw this addon's interface inside ``parent_widget``."""
         pass
 
     def unload(self):
-        """当关闭插件或刷新时，在这里清理定时器、快捷键或线程"""
+        """Release timers, shortcuts, threads and canvas markers.
+
+        QGIS calls this on shutdown, and ``main.py`` calls it again before
+        rebuilding the tabs on a language switch, so it must be safe to call
+        more than once.
+        """
         pass

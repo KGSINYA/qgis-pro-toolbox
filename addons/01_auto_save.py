@@ -9,10 +9,10 @@ from qgis.PyQt.QtWidgets import (QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
                                  QFrame, QListWidget, QListWidgetItem, QAbstractItemView)
 from qgis.core import QgsProject, QgsVectorFileWriter, QgsMapLayer, Qgis
 
-from base_addon import BaseAddon
+from base_addon import BaseAddon, tr
 
 class AutoSaveAddon(BaseAddon):
-    title = "💾 自动存档"
+    title = tr("💾 自动存档", "💾 Autosave")
     order = 1
 
     def __init__(self, iface, dock_widget, plugin_dir):
@@ -29,36 +29,36 @@ class AutoSaveAddon(BaseAddon):
     def setup_ui(self, parent_widget):
         layout = QVBoxLayout(parent_widget)
 
-        btn_folder = QPushButton("📁 选择存档路径")
+        btn_folder = QPushButton(tr("📁 选择存档路径", "📁 Choose save folder"))
         btn_folder.clicked.connect(self.choose_folder)
 
         self.txt_folder = QLineEdit()
         self.txt_folder.setReadOnly(True)
-        self.txt_folder.setPlaceholderText("尚未选择存档文件夹...")
+        self.txt_folder.setPlaceholderText(tr("尚未选择存档文件夹...", "No save folder selected yet..."))
         self.txt_folder.setStyleSheet(
             "background-color: #f5f5f5; color: #555; border: 1px solid #ccc; border-radius: 3px;")
 
         layout_interval = QHBoxLayout()
-        layout_interval.addWidget(QLabel("每"))
+        layout_interval.addWidget(QLabel(tr("每", "Every")))
         self.spin_interval = QSpinBox()
         self.spin_interval.setRange(1, 120)
         self.spin_interval.setValue(10)
         self.spin_interval.setFixedWidth(60)
         layout_interval.addWidget(self.spin_interval)
-        layout_interval.addWidget(QLabel("分钟存一次"))
+        layout_interval.addWidget(QLabel(tr("分钟存一次", "minutes")))
         layout_interval.addStretch()
 
         layout_max = QHBoxLayout()
-        layout_max.addWidget(QLabel("最多保留"))
+        layout_max.addWidget(QLabel(tr("最多保留", "Keep up to")))
         self.spin_max_saves = QSpinBox()
         self.spin_max_saves.setRange(1, 50)
         self.spin_max_saves.setValue(5)
         self.spin_max_saves.setFixedWidth(60)
         layout_max.addWidget(self.spin_max_saves)
-        layout_max.addWidget(QLabel("个文件"))
+        layout_max.addWidget(QLabel(tr("个文件", "backups")))
         layout_max.addStretch()
 
-        self.btn_toggle = QPushButton("▶ 开启守护")
+        self.btn_toggle = QPushButton(tr("▶ 开启守护", "▶ Start autosave"))
         self.btn_toggle.setMinimumHeight(40)
         self.btn_toggle.setStyleSheet("background-color: #4CAF50; color: white; font-weight: bold;")
         self.btn_toggle.clicked.connect(self.toggle_timer)
@@ -71,27 +71,28 @@ class AutoSaveAddon(BaseAddon):
         layout.addSpacing(10)
         layout.addWidget(self.btn_toggle)
 
-        self.btn_restore = QPushButton("⏪ 紧急回退到上一存档")
+        self.btn_restore = QPushButton(tr("⏪ 紧急回退到上一存档", "⏪ Emergency restore to previous save"))
         self.btn_restore.setMinimumHeight(35)
         self.btn_restore.setStyleSheet("background-color: #FF9800; color: white; font-weight: bold;")
         self.btn_restore.clicked.connect(self.restore_save)
         layout.addWidget(self.btn_restore)
 
-        # --- 分割线 ---
+        # --- Separator ---
         line = QFrame()
         line.setFrameShape(QFrame.HLine)
         line.setFrameShadow(QFrame.Sunken)
         line.setContentsMargins(0, 5, 0, 5)
         layout.addWidget(line)
 
-        # --- 批量导出功能 UI ---
-        layout.addWidget(QLabel("<b>📦 批量数据导出 (Shapefile)</b>"))
+        # --- Batch export UI ---
+        layout.addWidget(QLabel(tr("<b>📦 批量数据导出 (Shapefile)</b>",
+                                   "<b>📦 Batch data export (Shapefile)</b>")))
 
         btn_layout = QHBoxLayout()
-        self.btn_get_selected = QPushButton("📥 获取选中图层")
+        self.btn_get_selected = QPushButton(tr("📥 获取选中图层", "📥 Get selected layers"))
         self.btn_get_selected.clicked.connect(self.populate_selected_layers)
 
-        self.btn_get_memory = QPushButton("📝 获取临时图层")
+        self.btn_get_memory = QPushButton(tr("📝 获取临时图层", "📝 Get temporary layers"))
         self.btn_get_memory.clicked.connect(self.populate_memory_layers)
 
         btn_layout.addWidget(self.btn_get_selected)
@@ -103,7 +104,7 @@ class AutoSaveAddon(BaseAddon):
         self.export_list.setFixedHeight(100)
         layout.addWidget(self.export_list)
 
-        self.btn_do_export = QPushButton("🚀 执行批量导出")
+        self.btn_do_export = QPushButton(tr("🚀 执行批量导出", "🚀 Run batch export"))
         self.btn_do_export.setStyleSheet("background-color: #ff9800; color: white; font-weight: bold; height: 35px;")
         self.btn_do_export.clicked.connect(self.execute_batch_export)
         layout.addWidget(self.btn_do_export)
@@ -111,25 +112,26 @@ class AutoSaveAddon(BaseAddon):
         layout.addStretch()
 
     def choose_folder(self):
-        folder = QFileDialog.getExistingDirectory(self.dock_widget, "选择存档路径")
+        folder = QFileDialog.getExistingDirectory(self.dock_widget, tr("选择存档路径", "Choose save folder"))
         if folder:
             self.save_folder = folder
             self.txt_folder.setText(self.save_folder)
-            self.txt_folder.setToolTip(f"完整路径:\n{self.save_folder}")
+            self.txt_folder.setToolTip(tr(f"完整路径:\n{self.save_folder}", f"Full path:\n{self.save_folder}"))
             self.txt_folder.setCursorPosition(len(self.save_folder))
 
     def toggle_timer(self):
         if not self.save_folder:
-            QMessageBox.warning(self.dock_widget, "警告", "请先选择存档文件夹！")
+            QMessageBox.warning(self.dock_widget, tr("警告", "Warning"),
+                                tr("请先选择存档文件夹！", "Please choose a save folder first."))
             return
 
         if self.timer.isActive():
             self.timer.stop()
-            self.btn_toggle.setText("▶ 开启守护")
+            self.btn_toggle.setText(tr("▶ 开启守护", "▶ Start autosave"))
             self.btn_toggle.setStyleSheet("background-color: #4CAF50; color: white;")
         else:
             self.timer.start(self.spin_interval.value() * 60 * 1000)
-            self.btn_toggle.setText("⏹ 停止守护")
+            self.btn_toggle.setText(tr("⏹ 停止守护", "⏹ Stop autosave"))
             self.btn_toggle.setStyleSheet("background-color: #f44336; color: white;")
 
     def execute_save(self):
@@ -173,42 +175,53 @@ class AutoSaveAddon(BaseAddon):
                 except Exception:
                     pass
 
-        self.iface.statusBarIface().showMessage(f"已自动备份 {len(editing_layers)} 个编辑中图层", 3000)
+        self.iface.statusBarIface().showMessage(
+            tr(f"已自动备份 {len(editing_layers)} 个编辑中图层",
+               f"Autosaved {len(editing_layers)} layers in edit mode"), 3000)
 
     def restore_save(self):
         if not self.save_history:
-            QMessageBox.warning(self.dock_widget, "警告", "当前没有任何可用的存档记录！")
+            QMessageBox.warning(self.dock_widget, tr("警告", "Warning"),
+                                tr("当前没有任何可用的存档记录！", "No saved backups are available."))
             return
 
         last_backup_dir = self.save_history[-1]
 
         if not os.path.exists(last_backup_dir):
-            QMessageBox.warning(self.dock_widget, "错误", "最近的存档文件夹已丢失！")
+            QMessageBox.warning(self.dock_widget, tr("错误", "Error"),
+                                tr("最近的存档文件夹已丢失！", "The most recent save folder is missing."))
             return
 
-        reply = QMessageBox.question(self.dock_widget, "确认回溯",
-                                     f"将加载上一存档文件夹中的所有图层: \n{os.path.basename(last_backup_dir)}\n确认执行？",
-                                     QMessageBox.Yes | QMessageBox.No)
+        reply = QMessageBox.question(
+            self.dock_widget, tr("确认回溯", "Confirm restore"),
+            tr(f"将加载上一存档文件夹中的所有图层: \n{os.path.basename(last_backup_dir)}\n确认执行？",
+               f"All layers in the previous save folder will be loaded:\n{os.path.basename(last_backup_dir)}\nDo you want to continue?"),
+            QMessageBox.Yes | QMessageBox.No)
 
         if reply == QMessageBox.Yes:
             loaded_count = 0
             for file_name in os.listdir(last_backup_dir):
                 if file_name.endswith(".gpkg"):
                     file_path = os.path.join(last_backup_dir, file_name)
-                    layer_name = f"回溯_{file_name.replace('.gpkg', '')}"
+                    layer_name = f"{tr('回溯_', 'Restored_')}{file_name.replace('.gpkg', '')}"
                     layer = self.iface.addVectorLayer(file_path, layer_name, "ogr")
                     if layer:
                         loaded_count += 1
 
             if loaded_count > 0:
-                self.iface.messageBar().pushMessage("回溯成功", f"已成功加载 {loaded_count} 个历史图层",
-                                                    level=Qgis.Success, duration=5)
+                self.iface.messageBar().pushMessage(
+                    tr("回溯成功", "Restore complete"),
+                    tr(f"已成功加载 {loaded_count} 个历史图层",
+                       f"Restored {loaded_count} layers from the backup"),
+                    level=Qgis.Success, duration=5)
             else:
-                self.iface.messageBar().pushMessage("回溯失败", "存档文件夹中没有找到有效数据", level=Qgis.Warning,
-                                                    duration=3)
+                self.iface.messageBar().pushMessage(
+                    tr("回溯失败", "Restore failed"),
+                    tr("存档文件夹中没有找到有效数据", "No valid data was found in the save folder"),
+                    level=Qgis.Warning, duration=3)
 
     def populate_selected_layers(self):
-        """获取用户在 QGIS 图层树中选中的图层"""
+        """Collect the vector layers selected in the QGIS layer tree."""
         self.export_list.clear()
         selected_layers = self.iface.layerTreeView().selectedLayers()
         for layer in selected_layers:
@@ -217,26 +230,36 @@ class AutoSaveAddon(BaseAddon):
                 item.setData(Qt.UserRole, layer.id())
                 self.export_list.addItem(item)
         if self.export_list.count() == 0:
-            self.iface.messageBar().pushMessage("提示", "未在图层树中选中任何矢量图层", level=1, duration=2)
+            self.iface.messageBar().pushMessage(
+                tr("提示", "Notice"),
+                tr("未在图层树中选中任何矢量图层", "No vector layers selected in the layer tree"),
+                level=1, duration=2)
 
     def populate_memory_layers(self):
-        """获取所有临时图层"""
+        """Collect every temporary (memory) layer in the project."""
         self.export_list.clear()
         for layer in QgsProject.instance().mapLayers().values():
             if layer.type() == QgsMapLayer.VectorLayer and layer.dataProvider().name() == 'memory':
-                item = QListWidgetItem(f"📝 {layer.name()} [临时]")
+                item = QListWidgetItem(f"📝 {layer.name()}" + tr(" [临时]", " [Temporary]"))
                 item.setData(Qt.UserRole, layer.id())
                 self.export_list.addItem(item)
         if self.export_list.count() == 0:
-            self.iface.messageBar().pushMessage("提示", "当前项目中没有找到临时图层", level=1, duration=2)
+            self.iface.messageBar().pushMessage(
+                tr("提示", "Notice"),
+                tr("当前项目中没有找到临时图层", "No temporary layers found in the current project"),
+                level=1, duration=2)
 
     def execute_batch_export(self):
-        """执行导出逻辑"""
+        """Export every listed layer to an ESRI Shapefile."""
         if self.export_list.count() == 0:
-            self.iface.messageBar().pushMessage("提示", "导出列表为空，请先点击获取图层按钮", level=1)
+            self.iface.messageBar().pushMessage(
+                tr("提示", "Notice"),
+                tr("导出列表为空，请先点击获取图层按钮",
+                   "The export list is empty. Add layers with the buttons above first"),
+                level=1)
             return
 
-        export_dir = QFileDialog.getExistingDirectory(self.dock_widget, "选择导出文件夹")
+        export_dir = QFileDialog.getExistingDirectory(self.dock_widget, tr("选择导出文件夹", "Choose export folder"))
         if not export_dir:
             return
 
@@ -268,8 +291,14 @@ class AutoSaveAddon(BaseAddon):
         self.export_list.clear()
 
         if error_count == 0:
-            self.iface.messageBar().pushMessage("导出成功", f"成功导出 {success_count} 个图层至: {export_dir}", level=0,
-                                                duration=5)
+            self.iface.messageBar().pushMessage(
+                tr("导出成功", "Export complete"),
+                tr(f"成功导出 {success_count} 个图层至: {export_dir}",
+                   f"Exported {success_count} layers to: {export_dir}"),
+                level=0, duration=5)
         else:
-            self.iface.messageBar().pushMessage("完成", f"成功: {success_count} 个，失败: {error_count} 个", level=1,
-                                                duration=5)
+            self.iface.messageBar().pushMessage(
+                tr("完成", "Finished"),
+                tr(f"成功: {success_count} 个，失败: {error_count} 个",
+                   f"Succeeded: {success_count}, failed: {error_count}"),
+                level=1, duration=5)

@@ -14,7 +14,7 @@ from qgis.core import QgsProject, QgsMapLayer, Qgis
 
 from base_addon import BaseAddon
 
-# 全局变量占位
+# Placeholders for global module objects
 Document = None
 Cm = None
 Inches = None
@@ -22,9 +22,9 @@ WD_TABLE_ALIGNMENT = None
 
 def load_docx_from_libs(plugin_dir):
     """
-    【内网离线免安装引擎】
-    自动扫描插件目录下的 libs 文件夹，将里面的 .whl 文件自动解压并挂载到 Python 路径中。
-    无需 OSGeo4W Shell，无需 pip，无需联网！
+    [Offline, install-free engine for intranet deployments]
+    Scans the libs folder of the plugin, auto-unpacks and mounts its .whl files onto the Python path.
+    No OSGeo4W Shell, no pip, no internet connection required!
     """
     global Document, Cm, Inches, WD_TABLE_ALIGNMENT
     if Document is not None:
@@ -33,7 +33,7 @@ def load_docx_from_libs(plugin_dir):
     libs_dir = os.path.join(plugin_dir, "libs")
     os.makedirs(libs_dir, exist_ok=True)
 
-    # 1. 自动将 libs 目录下的所有 .whl 文件原地解压（.whl 本质就是 zip 压缩包）
+    # 1. Unpack every .whl file in the libs folder in place (a .whl is just a zip archive)
     for fname in os.listdir(libs_dir):
         if fname.lower().endswith(".whl"):
             whl_path = os.path.join(libs_dir, fname)
@@ -45,13 +45,13 @@ def load_docx_from_libs(plugin_dir):
                     with open(stamp_file, 'w', encoding='utf-8') as f:
                         f.write("ok")
                 except Exception as e:
-                    print(f"[WordReport] 自动解压 {fname} 失败: {e}")
+                    print(tr(f"[WordReport] 自动解压 {fname} 失败: {e}", f"[WordReport] Failed to unpack {fname}: {e}"))
 
-    # 2. 将 libs 目录加入到 Python 模块搜索路径的最前面
+    # 2. Put the libs folder at the front of the Python module search path
     if libs_dir not in sys.path:
         sys.path.insert(0, libs_dir)
 
-    # 3. 尝试导入 python-docx
+    # 3. Try to import python-docx
     try:
         from docx import Document as _Document
         from docx.shared import Cm as _Cm, Inches as _Inches
@@ -64,21 +64,25 @@ def load_docx_from_libs(plugin_dir):
     except Exception as e:
         py_ver = f"{sys.version_info.major}.{sys.version_info.minor}"
         err_msg = (
-            f"底层报错: {type(e).__name__}: {e}\n"
-            f"当前 QGIS 内置 Python 版本: {py_ver}"
+            tr(
+                f"底层报错: {type(e).__name__}: {e}\n"
+                f"当前 QGIS 内置 Python 版本: {py_ver}",
+                f"Underlying error: {type(e).__name__}: {e}\n"
+                f"Python version bundled with QGIS: {py_ver}"
+            )
         )
         return False, err_msg
 
 class WordReportAddon(BaseAddon):
-    title = "📝 Word报表"
+    title = tr("📝 Word报表", "📝 Word Report")
     order = 6
 
     def __init__(self, iface, dock_widget, plugin_dir):
         super().__init__(iface, dock_widget, plugin_dir)
         self.word_template_path = ""
         self.current_layer = None
-        self.map_types = ["不填充", "矢量字段", "外部图片"]
-        # 初始化时自动尝试从 libs 文件夹免安装加载
+        self.map_types = [tr("不填充", "Leave empty"), tr("矢量字段", "Vector field"), tr("外部图片", "External image")]
+        # On startup, try to load from the libs folder without installing anything
         load_docx_from_libs(self.plugin_dir)
 
     def setup_ui(self, parent_widget):
@@ -86,8 +90,8 @@ class WordReportAddon(BaseAddon):
         main_layout.setContentsMargins(10, 10, 10, 10)
         main_layout.setSpacing(10)
 
-        # --- 区域 1: Word 模板解析 ---
-        group_template = QGroupBox("1. 模板解析")
+        # --- Section 1: Word template parsing ---
+        group_template = QGroupBox(tr("1. 模板解析", "1. Template parsing"))
         group_template.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -105,7 +109,7 @@ class WordReportAddon(BaseAddon):
         """)
         layout_template = QVBoxLayout(group_template)
 
-        btn_word = QPushButton("📂 选择 Word 模板并提取表头")
+        btn_word = QPushButton(tr("📂 选择 Word 模板并提取表头", "📂 Select Word template and extract headers"))
         btn_word.setMinimumHeight(36)
         btn_word.setStyleSheet("""
             QPushButton {
@@ -125,15 +129,15 @@ class WordReportAddon(BaseAddon):
         btn_word.clicked.connect(self.word_load_template)
         layout_template.addWidget(btn_word)
 
-        self.lbl_word_path = QLabel("当前未选择模板文件")
+        self.lbl_word_path = QLabel(tr("当前未选择模板文件", "No template file selected"))
         self.lbl_word_path.setStyleSheet("color: #718093; font-size: 11px; margin-top: 2px;")
         self.lbl_word_path.setWordWrap(True)
         layout_template.addWidget(self.lbl_word_path)
 
         main_layout.addWidget(group_template)
 
-        # --- 区域 2: 动态映射表 ---
-        group_mapping = QGroupBox("2. 动态表格列映射配置")
+        # --- Section 2: Dynamic mapping table ---
+        group_mapping = QGroupBox(tr("2. 动态表格列映射配置", "2. Column mapping configuration"))
         group_mapping.setStyleSheet("""
             QGroupBox {
                 font-weight: bold;
@@ -151,8 +155,8 @@ class WordReportAddon(BaseAddon):
         """)
         layout_mapping = QVBoxLayout(group_mapping)
 
-        # === 新增：刷新图层按钮 ===
-        self.btn_refresh_layers = QPushButton("🔄 刷新 QGIS 图层与字段")
+        # === Added: refresh layers button ===
+        self.btn_refresh_layers = QPushButton(tr("🔄 刷新 QGIS 图层与字段", "🔄 Refresh QGIS layers and fields"))
         self.btn_refresh_layers.setStyleSheet("""
             QPushButton {
                 background-color: #f1f2f6;
@@ -165,11 +169,11 @@ class WordReportAddon(BaseAddon):
             QPushButton:hover { background-color: #dfe6e9; }
         """)
         self.btn_refresh_layers.clicked.connect(self.word_refresh_layers)
-        layout_mapping.addWidget(self.btn_refresh_layers, 0, Qt.AlignRight)  # 靠右对齐，更美观
+        layout_mapping.addWidget(self.btn_refresh_layers, 0, Qt.AlignRight)  # Right-aligned for a cleaner look
         # ==========================
 
         self.word_table_config = QTableWidget(0, 3)
-        self.word_table_config.setHorizontalHeaderLabels(["Word 表头", "填充类型", "数据源与详细配置"])
+        self.word_table_config.setHorizontalHeaderLabels([tr("Word 表头", "Word header"), tr("填充类型", "Fill type"), tr("数据源与详细配置", "Data source and settings")])
 
         self.word_table_config.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.word_table_config.setColumnWidth(1, 120)
@@ -196,8 +200,8 @@ class WordReportAddon(BaseAddon):
 
         main_layout.addWidget(group_mapping)
 
-        # --- 区域 3: 执行按钮 ---
-        self.btn_run_word = QPushButton("🪄 一键生成专业 Word 报表")
+        # --- Section 3: Run button ---
+        self.btn_run_word = QPushButton(tr("🪄 一键生成专业 Word 报表", "🪄 Generate professional Word report"))
         self.btn_run_word.setMinimumHeight(42)
         self.btn_run_word.setStyleSheet("""
             QPushButton {
@@ -220,23 +224,29 @@ class WordReportAddon(BaseAddon):
         main_layout.addWidget(self.btn_run_word)
 
     def check_and_install_whl(self):
-        """如果未检测到 python-docx，引导用户直接选择存放那 3 个 .whl 的文件夹自动装配"""
+        """If python-docx is not detected, offer to set it up from a folder holding the three .whl files"""
         ok, err_detail = load_docx_from_libs(self.plugin_dir)
         if ok:
             return True
 
         reply = QMessageBox.question(
             self.dock_widget,
-            "缺少 Word 报表组件 (支持一键离线导入)",
-            f"当前环境尚未加载 python-docx 库！\n({err_detail})\n\n"
-            "💡 您无需打开 OSGeo4W Shell 敲命令行！\n"
-            "点击【Yes】直接选择您电脑上存放那 3 个 .whl 离线包（lxml、python_docx、typing_extensions）的文件夹，"
-            "插件将自动为您完成内置挂载！",
+            tr("缺少 Word 报表组件 (支持一键离线导入)", "Word report component missing (offline setup supported)"),
+            tr(
+                f"当前环境尚未加载 python-docx 库！\n({err_detail})\n\n"
+                "💡 您无需打开 OSGeo4W Shell 敲命令行！\n"
+                "点击【Yes】直接选择您电脑上存放那 3 个 .whl 离线包（lxml、python_docx、typing_extensions）的文件夹，"
+                "插件将自动为您完成内置挂载！",
+                f"The python-docx library is not loaded in this environment!\n({err_detail})\n\n"
+                "💡 You do not need to open OSGeo4W Shell or type any commands!\n"
+                "Click [Yes] and select the folder on your computer that holds the three offline .whl packages "
+                "(lxml, python_docx, typing_extensions). The plugin will mount them automatically."
+            ),
             QMessageBox.Yes | QMessageBox.No
         )
 
         if reply == QMessageBox.Yes:
-            whl_dir = QFileDialog.getExistingDirectory(self.dock_widget, "选择存放 3 个 .whl 文件的文件夹")
+            whl_dir = QFileDialog.getExistingDirectory(self.dock_widget, tr("选择存放 3 个 .whl 文件的文件夹", "Select the folder containing the three .whl files"))
             if whl_dir:
                 libs_dir = os.path.join(self.plugin_dir, "libs")
                 os.makedirs(libs_dir, exist_ok=True)
@@ -247,10 +257,10 @@ class WordReportAddon(BaseAddon):
                         copied_count += 1
 
                 if copied_count == 0:
-                    QMessageBox.warning(self.dock_widget, "未找到文件", "您选择的文件夹中没有找到任何 .whl 文件！")
+                    QMessageBox.warning(self.dock_widget, tr("未找到文件", "No files found"), tr("您选择的文件夹中没有找到任何 .whl 文件！", "The selected folder contains no .whl files."))
                     return False
 
-                # 清理之前可能失败的半加载模块缓存，重新挂载
+                # Drop any half-loaded modules left by an earlier failed attempt, then mount again
                 for mod_name in list(sys.modules.keys()):
                     if mod_name.startswith(('docx', 'lxml', 'typing_extensions')):
                         sys.modules.pop(mod_name, None)
@@ -258,20 +268,24 @@ class WordReportAddon(BaseAddon):
                 ok2, err2 = load_docx_from_libs(self.plugin_dir)
                 if ok2:
                     self.iface.messageBar().pushMessage(
-                        "离线装配成功", f"已成功内置挂载 {copied_count} 个 .whl 离线包，现在可以直接使用了！",
+                        tr("离线装配成功", "Offline setup complete"), tr(f"已成功内置挂载 {copied_count} 个 .whl 离线包，现在可以直接使用了！", f"Mounted {copied_count} offline .whl packages. They are ready to use."),
                         level=Qgis.Success, duration=4
                     )
                     return True
                 else:
                     QMessageBox.critical(
-                        self.dock_widget, "装配失败",
-                        f"已复制 .whl 文件但加载仍然失败：\n{err2}\n\n"
-                        "请检查 lxml 的 cp 版本号是否与当前 QGIS 的 Python 版本一致（例如 cp312 仅限 Python 3.12 使用）。"
+                        self.dock_widget, tr("装配失败", "Setup failed"),
+                        tr(
+                            f"已复制 .whl 文件但加载仍然失败：\n{err2}\n\n"
+                            "请检查 lxml 的 cp 版本号是否与当前 QGIS 的 Python 版本一致（例如 cp312 仅限 Python 3.12 使用）。",
+                            f"The .whl files were copied but loading still failed:\n{err2}\n\n"
+                            "Check that the cp version of lxml matches the Python version used by QGIS (for example, cp312 works only with Python 3.12)."
+                        )
                     )
         return False
 
     def word_browse_folder(self, line_edit):
-        path = QFileDialog.getExistingDirectory(self.dock_widget, "选择图片所在文件夹")
+        path = QFileDialog.getExistingDirectory(self.dock_widget, tr("选择图片所在文件夹", "Select image folder"))
         if path:
             line_edit.setText(path)
 
@@ -280,21 +294,21 @@ class WordReportAddon(BaseAddon):
             if not self.check_and_install_whl():
                 return
 
-        path, _ = QFileDialog.getOpenFileName(self.dock_widget, "选择Word模板", "", "Word (*.docx)")
+        path, _ = QFileDialog.getOpenFileName(self.dock_widget, tr("选择Word模板", "Select Word template"), "", "Word (*.docx)")
         if not path:
             return
 
         try:
             doc = Document(path)
             if len(doc.tables) == 0:
-                QMessageBox.warning(self.dock_widget, "错误", "该 Word 文档中没有找到表格！")
+                QMessageBox.warning(self.dock_widget, tr("错误", "Error"), tr("该 Word 文档中没有找到表格！", "No table was found in this Word document."))
                 return
 
             table = doc.tables[0]
             headers = [cell.text.strip() for cell in table.rows[0].cells]
 
             self.word_template_path = path
-            self.lbl_word_path.setText(f"已加载: {os.path.basename(path)}")
+            self.lbl_word_path.setText(tr(f"已加载: {os.path.basename(path)}", f"Loaded: {os.path.basename(path)}"))
             self.word_table_config.setRowCount(0)
 
             layers = [layer for layer in QgsProject.instance().mapLayers().values() if
@@ -319,27 +333,27 @@ class WordReportAddon(BaseAddon):
                 row = self.word_table_config.rowCount()
                 self.word_table_config.insertRow(row)
 
-                # 第 0 列: 表头名称
-                item_header = QTableWidgetItem(f"列 {i + 1}: {header_text}")
+                # Column 0: header name
+                item_header = QTableWidgetItem(tr(f"列 {i + 1}: {header_text}", f"Column {i + 1}: {header_text}"))
                 item_header.setFlags(item_header.flags() & ~Qt.ItemIsEditable)
                 item_header.setData(Qt.UserRole, i)
                 self.word_table_config.setItem(row, 0, item_header)
 
-                # 第 1 列: 类型选择
+                # Column 1: fill type
                 combo_type = QComboBox()
                 combo_type.addItems(self.map_types)
                 combo_type.setStyleSheet(combo_style)
                 self.word_table_config.setCellWidget(row, 1, combo_type)
 
-                # 第 2 列: 动态堆叠面板
+                # Column 2: stacked configuration panel
                 stack = QStackedWidget()
 
-                # 状态 0: 不填充
-                lbl_none = QLabel("  - 无需配置 -")
+                # Page 0: leave empty
+                lbl_none = QLabel(tr("  - 无需配置 -", "  - No configuration needed -"))
                 lbl_none.setStyleSheet("color: #b2bec3; font-style: italic;")
                 stack.addWidget(lbl_none)
 
-                # 状态 1: 矢量字段 (独立图层 + 字段)
+                # Page 1: vector field (separate layer + field)
                 w_field_widget = QWidget()
                 w_field_layout = QHBoxLayout(w_field_widget)
                 w_field_layout.setContentsMargins(2, 2, 2, 2)
@@ -369,13 +383,13 @@ class WordReportAddon(BaseAddon):
                 w_field_layout.addWidget(combo_field_sub, 1)
                 stack.addWidget(w_field_widget)
 
-                # 状态 2: 外部图片 (双行自适应布局)
+                # Page 2: external image (two-row responsive layout)
                 w_img_widget = QWidget()
                 w_img_layout = QVBoxLayout(w_img_widget)
                 w_img_layout.setContentsMargins(2, 2, 2, 2)
                 w_img_layout.setSpacing(4)
 
-                # 第一行：图层与字段选择
+                # First row: layer and field selection
                 top_img_layout = QHBoxLayout()
                 top_img_layout.setContentsMargins(0, 0, 0, 0)
                 top_img_layout.setSpacing(4)
@@ -403,13 +417,13 @@ class WordReportAddon(BaseAddon):
                 top_img_layout.addWidget(combo_img_layer, 1)
                 top_img_layout.addWidget(combo_img_field, 1)
 
-                # 第二行：文件夹路径 + 浏览按钮 + 图片宽度调整
+                # Second row: folder path + browse button + image width
                 bottom_img_layout = QHBoxLayout()
                 bottom_img_layout.setContentsMargins(0, 0, 0, 0)
                 bottom_img_layout.setSpacing(4)
 
                 line_folder = QLineEdit()
-                line_folder.setPlaceholderText("选择图片文件夹路径...")
+                line_folder.setPlaceholderText(tr("选择图片文件夹路径...", "Select image folder path..."))
                 line_folder.setObjectName("folder_input")
                 line_folder.setStyleSheet(
                     "padding: 4px 6px; border: 1px solid #b2bec3; border-radius: 4px; background: white; color: #2f3640;")
@@ -429,7 +443,7 @@ class WordReportAddon(BaseAddon):
 
                 bottom_img_layout.addWidget(line_folder, 3)
                 bottom_img_layout.addWidget(btn_folder)
-                bottom_img_layout.addWidget(QLabel("宽度:"))
+                bottom_img_layout.addWidget(QLabel(tr("宽度:", "Width:")))
                 bottom_img_layout.addWidget(spin_width)
 
                 w_img_layout.addLayout(top_img_layout)
@@ -449,21 +463,21 @@ class WordReportAddon(BaseAddon):
             self.word_table_config.resizeRowsToContents()
 
         except Exception as e:
-            QMessageBox.critical(self.dock_widget, "解析错误", f"无法读取模板: {str(e)}")
+            QMessageBox.critical(self.dock_widget, tr("解析错误", "Parse error"), tr(f"无法读取模板: {str(e)}", f"Cannot read template: {str(e)}"))
 
     def word_generate_report(self):
         if not hasattr(self, 'word_template_path') or not self.word_template_path:
-            QMessageBox.warning(self.dock_widget, "提示", "请先加载并选择 Word 模板！")
+            QMessageBox.warning(self.dock_widget, tr("提示", "Notice"), tr("请先加载并选择 Word 模板！", "Load and select a Word template first."))
             return
 
-        save_path, _ = QFileDialog.getSaveFileName(self.dock_widget, "保存报表", "", "Word (*.docx)")
+        save_path, _ = QFileDialog.getSaveFileName(self.dock_widget, tr("保存报表", "Save report"), "", "Word (*.docx)")
         if not save_path:
             return
 
         try:
             doc = Document(self.word_template_path)
             if not doc.tables:
-                QMessageBox.warning(self.dock_widget, "错误", "Word 模板中没有表格！")
+                QMessageBox.warning(self.dock_widget, tr("错误", "Error"), tr("Word 模板中没有表格！", "The Word template contains no table."))
                 return
             table = doc.tables[0]
 
@@ -483,7 +497,7 @@ class WordReportAddon(BaseAddon):
                         break
 
             if not main_layer:
-                QMessageBox.warning(self.dock_widget, "提示", "请至少在一列中配置一个有效的“矢量字段”作为数据循环基准！")
+                QMessageBox.warning(self.dock_widget, tr("提示", "Notice"), tr("请至少在一列中配置一个有效的“矢量字段”作为数据循环基准！", "Configure at least one column as \"Vector field\" to define which features the report loops over."))
                 return
 
             features = list(main_layer.getFeatures())
@@ -521,7 +535,7 @@ class WordReportAddon(BaseAddon):
                                 val = feat[target_field] if target_field in feat.fields().names() else ""
                                 cell.text = str(val) if val is not None else ""
                             else:
-                                cell.text = "[跨图层字段]"
+                                cell.text = tr("[跨图层字段]", "[Cross-layer field]")
 
                     elif type_idx == 2:
                         sub_w = stack.widget(2)
@@ -534,7 +548,7 @@ class WordReportAddon(BaseAddon):
                         img_width_cm = spin_w.value() if spin_w else 4
 
                         if not img_dir or not os.path.exists(img_dir):
-                            cell.text = "文件夹无效"
+                            cell.text = tr("文件夹无效", "Invalid folder")
                             continue
 
                         img_match_name = ""
@@ -565,50 +579,50 @@ class WordReportAddon(BaseAddon):
                             run.add_picture(img_path, width=Cm(img_width_cm))
                             cell.paragraphs[0].alignment = WD_TABLE_ALIGNMENT.CENTER
                         else:
-                            cell.text = "无图片"
+                            cell.text = tr("无图片", "No image")
 
             doc.save(save_path)
-            QMessageBox.information(self.dock_widget, "成功", f"专业版 Word 报表已生成！共导出 {len(features)} 条记录。")
+            QMessageBox.information(self.dock_widget, tr("成功", "Success"), tr(f"专业版 Word 报表已生成！共导出 {len(features)} 条记录。", f"Word report generated. {len(features)} records exported."))
 
         except Exception as e:
-            QMessageBox.critical(self.dock_widget, "生成失败", f"错误详情: {str(e)}")
+            QMessageBox.critical(self.dock_widget, tr("生成失败", "Generation failed"), tr(f"错误详情: {str(e)}", f"Error details: {str(e)}"))
 
             def word_refresh_layers(self):
-                """动态刷新下拉框中的图层和字段列表"""
-                # 1. 重新获取 QGIS 中最新的矢量图层
+                """Refresh the layer and field lists in the combo boxes"""
+                # 1. Re-read the latest vector layers from QGIS
                 layers = [layer for layer in QgsProject.instance().mapLayers().values() if
                           layer.type() == QgsMapLayer.VectorLayer]
 
                 if self.word_table_config.rowCount() == 0:
-                    QMessageBox.information(self.dock_widget, "提示",
-                                            f"已检测到 {len(layers)} 个图层。请先加载 Word 模板。")
+                    QMessageBox.information(self.dock_widget, tr("提示", "Notice"),
+                                            tr(f"已检测到 {len(layers)} 个图层。请先加载 Word 模板。", f"{len(layers)} layers detected. Load a Word template first."))
                     return
 
-                # 2. 遍历当前表格的所有行，更新里面的下拉框
+                # 2. Walk every row of the table and update its combo boxes
                 for row in range(self.word_table_config.rowCount()):
                     stack = self.word_table_config.cellWidget(row, 2)
                     if not stack:
                         continue
 
-                    # --- 更新状态 1 (矢量字段) 的图层下拉框 ---
+                    # --- Update the layer combo on page 1 (vector field) ---
                     sub_w_field = stack.widget(1)
                     c_lyr_field = sub_w_field.findChild(QComboBox, "layer_combo") if sub_w_field else None
                     if c_lyr_field:
-                        current_id = c_lyr_field.currentData()  # 记住刷新前选中的图层 ID
-                        c_lyr_field.blockSignals(True)  # 暂时屏蔽信号，防止清空时引发报错
+                        current_id = c_lyr_field.currentData()  # Remember the layer ID selected before the refresh
+                        c_lyr_field.blockSignals(True)  # Block signals while clearing to avoid errors
                         c_lyr_field.clear()
                         for lyr in layers:
                             c_lyr_field.addItem(lyr.name(), lyr.id())
 
-                        # 如果之前选的图层还在，就恢复选中状态
+                        # Restore the previous selection if that layer still exists
                         idx = c_lyr_field.findData(current_id)
                         if idx >= 0:
                             c_lyr_field.setCurrentIndex(idx)
-                        c_lyr_field.blockSignals(False)  # 恢复信号
-                        # 手动触发一次信号，让它连带把“字段下拉框”也刷新了
+                        c_lyr_field.blockSignals(False)  # Re-enable signals
+                        # Emit once manually so the field combo refreshes along with it
                         c_lyr_field.currentIndexChanged.emit(c_lyr_field.currentIndex())
 
-                    # --- 更新状态 2 (外部图片) 的图层下拉框 ---
+                    # --- Update the layer combo on page 2 (external image) ---
                     sub_w_img = stack.widget(2)
                     c_lyr_img = sub_w_img.findChild(QComboBox, "img_layer_combo") if sub_w_img else None
                     if c_lyr_img:
@@ -624,44 +638,44 @@ class WordReportAddon(BaseAddon):
                         c_lyr_img.blockSignals(False)
                         c_lyr_img.currentIndexChanged.emit(c_lyr_img.currentIndex())
 
-                QMessageBox.information(self.dock_widget, "刷新成功",
-                                        f"已同步最新数据，当前共有 {len(layers)} 个矢量图层可用。")
+                QMessageBox.information(self.dock_widget, tr("刷新成功", "Refresh complete"),
+                                        tr(f"已同步最新数据，当前共有 {len(layers)} 个矢量图层可用。", f"Latest data synchronized. {len(layers)} vector layers available."))
 
     def word_refresh_layers(self):
-        """动态刷新下拉框中的图层和字段列表"""
-        # 1. 重新获取 QGIS 中最新的矢量图层
+        """Refresh the layer and field lists in the combo boxes"""
+        # 1. Re-read the latest vector layers from QGIS
         layers = [layer for layer in QgsProject.instance().mapLayers().values() if
                   layer.type() == QgsMapLayer.VectorLayer]
 
         if self.word_table_config.rowCount() == 0:
-            QMessageBox.information(self.dock_widget, "提示", f"已检测到 {len(layers)} 个图层。请先加载 Word 模板。")
+            QMessageBox.information(self.dock_widget, tr("提示", "Notice"), tr(f"已检测到 {len(layers)} 个图层。请先加载 Word 模板。", f"{len(layers)} layers detected. Load a Word template first."))
             return
 
-        # 2. 遍历当前表格的所有行，更新里面的下拉框
+        # 2. Walk every row of the table and update its combo boxes
         for row in range(self.word_table_config.rowCount()):
             stack = self.word_table_config.cellWidget(row, 2)
             if not stack:
                 continue
 
-            # --- 更新状态 1 (矢量字段) 的图层下拉框 ---
+            # --- Update the layer combo on page 1 (vector field) ---
             sub_w_field = stack.widget(1)
             c_lyr_field = sub_w_field.findChild(QComboBox, "layer_combo") if sub_w_field else None
             if c_lyr_field:
-                current_id = c_lyr_field.currentData()  # 记住刷新前选中的图层 ID
-                c_lyr_field.blockSignals(True)  # 暂时屏蔽信号，防止清空时引发报错
+                current_id = c_lyr_field.currentData()  # Remember the layer ID selected before the refresh
+                c_lyr_field.blockSignals(True)  # Block signals while clearing to avoid errors
                 c_lyr_field.clear()
                 for lyr in layers:
                     c_lyr_field.addItem(lyr.name(), lyr.id())
 
-                # 如果之前选的图层还在，就恢复选中状态
+                # Restore the previous selection if that layer still exists
                 idx = c_lyr_field.findData(current_id)
                 if idx >= 0:
                     c_lyr_field.setCurrentIndex(idx)
-                c_lyr_field.blockSignals(False)  # 恢复信号
-                # 手动触发一次信号，让它连带把“字段下拉框”也刷新了
+                c_lyr_field.blockSignals(False)  # Re-enable signals
+                # Emit once manually so the field combo refreshes along with it
                 c_lyr_field.currentIndexChanged.emit(c_lyr_field.currentIndex())
 
-            # --- 更新状态 2 (外部图片) 的图层下拉框 ---
+            # --- Update the layer combo on page 2 (external image) ---
             sub_w_img = stack.widget(2)
             c_lyr_img = sub_w_img.findChild(QComboBox, "img_layer_combo") if sub_w_img else None
             if c_lyr_img:
@@ -677,4 +691,4 @@ class WordReportAddon(BaseAddon):
                 c_lyr_img.blockSignals(False)
                 c_lyr_img.currentIndexChanged.emit(c_lyr_img.currentIndex())
 
-        QMessageBox.information(self.dock_widget, "刷新成功", f"已同步最新数据，当前共有 {len(layers)} 个矢量图层可用。")
+        QMessageBox.information(self.dock_widget, tr("刷新成功", "Refresh complete"), tr(f"已同步最新数据，当前共有 {len(layers)} 个矢量图层可用。", f"Latest data synchronized. {len(layers)} vector layers available."))

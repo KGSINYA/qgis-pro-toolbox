@@ -2,14 +2,16 @@
 name=Pro Toolbox
 qgisMinimumVersion=3.16
 qgisMaximumVersion=3.99
-description=A hot-swappable toolbox for high-frequency GIS digitizing: crash-proof auto-save and restore, arrow-key layer cycling, numpad macro input, QA/QC pass-through, table-to-point mapping with batch map export, and template-driven Word reports. 面向高频矢量数字化生产的热插拔式提效工具箱。
+description=A hot-swappable toolbox for high-frequency GIS digitizing: crash-proof auto-save and restore, arrow-key layer cycling, numpad macro input, QA/QC pass-through, table-to-point mapping with batch map export, template-driven Word reports, and a bilingual (中文 / English) UI switchable at runtime. 面向高频矢量数字化生产的热插拔式提效工具箱，界面支持中英文一键切换。
 version=1.0.0
 author=KGSINYA
 email=kgsinya@163.com
 about=Pro Toolbox is a hot-swappable micro-kernel base for high-throughput GIS production workflows. Every feature is a standalone file under addons/ and is discovered at runtime: drop a file in, click Rescan, and a new tab appears without restarting QGIS. Python dependencies ship as offline wheels in libs/ and are unpacked on first run, so python-docx works on air-gapped intranets with zero pip configuration.
     Built-in modules: timed GPKG snapshots of the layers you are editing, with version rotation and one-click restore; arrow-key visibility cycling inside a layer group with an on-canvas OSD hint; numpad macro injection through the Win32 hotkey API, so it never fights QGIS shortcuts; a QA/QC pass-through that initializes a status field and jumps to the next unchecked feature; table-to-point mapping with coordinate jump, DMS parsing and batch map export; and Word reports generated from an existing .docx template with per-column field and image mapping.
+    Interface: bilingual at runtime. Every user-visible string is declared once as tr("中文", "English") and resolved on the fly; the 🌐 selector in the dock header reloads all addons in the other language instantly and remembers the choice. No restart, no .ts/.qm build step.
     Runtime note: the bundled wheels target CPython 3.12 / Windows x64 (QGIS 3.34+). On older QGIS builds the first five modules still work; only the Word module requires a matching lxml wheel in libs/.
     中文简介：一个采用「热插拔微内核」架构的 QGIS 生产流自动化与防崩溃底座。所有功能模块都是 addons/ 目录下的独立 .py 文件，运行时自动发现——把文件放进去、点一下「重新扫描」，新 Tab 立刻挂载，不需要重启 QGIS。libs/ 内置离线 wheel，首次运行自动解压并挂载，内网环境无需 pip 即可使用 python-docx。
+    界面：运行时双语。每个界面字符串只写一次 tr("中文", "English")，Dock 顶部的 🌐 选择器即时切换全部模块并记住选择；无需重启，也无需 .ts/.qm 编译流程。
     版本说明：内置 wheel 面向 CPython 3.12（Windows 版 QGIS 3.34+）。在更早的 QGIS 上，其余 5 个模块照常运行，仅「Word 报表」需要替换 libs/ 中对应 Python 版本的 lxml wheel。
     内置模块：定时 GPKG 自动存档（版本轮转 + 一键回溯）；方向键图层轮播（画布 OSD 提示）；小键盘宏文本注入（Win32 热键，规避 QGIS 快捷键冲突）；半自动质检流水线（状态字段初始化 + 自动跳转下一未检要素）；Excel/CSV 表格转点与批量出图（坐标跳转、度分秒解析）；Word 模板报表生成（字段/图片逐列映射）。
     Privacy: no network access, no telemetry. Project data and generated files never leave your machine.

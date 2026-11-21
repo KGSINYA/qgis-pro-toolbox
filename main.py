@@ -6,15 +6,17 @@ import importlib.util
 
 from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.QtWidgets import (QDockWidget, QWidget, QVBoxLayout, QHBoxLayout,
-                                 QPushButton, QLabel, QTabWidget, QAction)
+                                 QPushButton, QLabel, QTabWidget, QAction, QComboBox)
 from qgis.core import Qgis
 
-# 确保插件目录在系统路径中，方便子插件直接导入 BaseAddon
+# Keep the plugin directory on sys.path so addons can import BaseAddon / i18n directly.
 current_dir = os.path.dirname(__file__)
 if current_dir not in sys.path:
     sys.path.insert(0, current_dir)
 
 from base_addon import BaseAddon
+from i18n import LANG_EN, LANG_ZH, current_language, set_language, tr
+
 
 class ProToolboxPlugin:
     def __init__(self, iface):
@@ -24,16 +26,23 @@ class ProToolboxPlugin:
         self.dock_widget = None
         self.action = None
         self.loaded_addons = []
+        self.tabs = None
+        self.lbl_status = None
+        self.btn_reload = None
+        self.lang_combo = None
 
+    # ------------------------------------------------------------------
+    # QGIS entry points
+    # ------------------------------------------------------------------
     def initGui(self):
-        """QGIS 启动时初始化"""
-        self.action = QAction('🛠️ Pro Toolbox 生产提效工具箱', self.iface.mainWindow())
+        """Called by QGIS when the plugin is enabled."""
+        self.action = QAction(tr("🛠️ Pro Toolbox 生产提效工具箱", "🛠️ Pro Toolbox"), self.iface.mainWindow())
         self.action.triggered.connect(self.toggle_window)
         self.iface.addPluginToMenu("Pro Toolbox", self.action)
         self.iface.addToolBarIcon(self.action)
 
     def unload(self):
-        """QGIS 关闭或卸载插件时清理垃圾"""
+        """Called by QGIS when the plugin is disabled or QGIS quits."""
         self.unload_all_addons()
 
         if self.action:
@@ -45,19 +54,59 @@ class ProToolboxPlugin:
             self.dock_widget.deleteLater()
             self.dock_widget = None
 
-    def unload_all_addons(self):
-        """通知所有已加载的子模块清理自己的定时器、快捷键和线程"""
-        for addon in self.loaded_addons:
-            try:
-                addon.unload()
-            except Exception as e:
-                print(f"[ProToolbox] 卸载模块 {addon.title} 时出错: {e}")
-        self.loaded_addons.clear()
-        if hasattr(self, 'tabs') and self.tabs:
-            self.tabs.clear()
+    # ------------------------------------------------------------------
+    # Small helpers shared by the language switch
+    # ------------------------------------------------------------------
+    def _dock_title(self):
+        return tr("Pro Toolbox 生产提效工具箱", "Pro Toolbox")
 
+    def _status_text(self):
+        return tr(f"已加载模块: {len(self.loaded_addons)} 个",
+                  f"Loaded modules: {len(self.loaded_addons)}")
+
+    def apply_language(self):
+        """Refresh the few strings that live outside the rebuildable tabs."""
+        if self.action:
+            self.action.setText(tr("🛠️ Pro Toolbox 生产提效工具箱", "🛠️ Pro Toolbox"))
+
+        if self.dock_widget:
+            self.dock_widget.setWindowTitle(self._dock_title())
+
+        if self.lbl_status:
+            self.lbl_status.setText(self._status_text())
+
+        if self.btn_reload:
+            self.btn_reload.setText(tr("🔄 重新扫描加载模块", "🔄 Rescan addons"))
+            self.btn_reload.setToolTip(tr(
+                "往 addons 文件夹放入新模块后，点击此按钮即可立即生效",
+                "Drop a new module into addons/ and click to load it instantly"))
+
+        if self.lang_combo:
+            self.lang_combo.setToolTip(tr(
+                "界面语言：切换后立即重新加载全部模块",
+                "Interface language: reloads every module instantly"))
+
+    def on_language_changed(self, index):
+        """Toolbar selector handler: switch language, then remount everything."""
+        lang = LANG_ZH if index == 1 else LANG_EN
+        if not set_language(lang):
+            return
+
+        # 1) Non-tab strings (menu action, dock title, status bar, buttons).
+        self.apply_language()
+        # 2) Re-execute every addon module and rebuild all tabs in the new language.
+        self.load_all_addons()
+
+        self.iface.messageBar().pushMessage(
+            tr("语言已切换", "Language switched"),
+            tr("中文界面（全部模块已重新加载）", "English interface (all modules reloaded)"),
+            level=Qgis.Success, duration=3)
+
+    # ------------------------------------------------------------------
+    # Window
+    # ------------------------------------------------------------------
     def toggle_window(self):
-        """开关工具箱窗口"""
+        """Show / hide the floating toolbox."""
         if not self.dock_widget:
             self.build_ui()
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dock_widget)
@@ -70,8 +119,8 @@ class ProToolboxPlugin:
             self.dock_widget.raise_()
 
     def build_ui(self):
-        """构建主界面（自动扫描 addons 文件夹）"""
-        self.dock_widget = QDockWidget("Pro Toolbox 生产提效工具箱", self.iface.mainWindow())
+        """Build the dock: status bar, language selector, rescan button, tabs."""
+        self.dock_widget = QDockWidget(self._dock_title(), self.iface.mainWindow())
         self.dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
 
         def on_floating_changed(is_floating):
@@ -85,27 +134,37 @@ class ProToolboxPlugin:
 
         self.dock_widget.topLevelChanged.connect(on_floating_changed)
 
-        # 主容器
+        # Root container.
         main_container = QWidget()
         main_layout = QVBoxLayout(main_container)
         main_layout.setContentsMargins(4, 4, 4, 4)
 
-        # 顶部控制栏：以后往 addons 放新文件，点一下按钮就能加载，不用重启 QGIS
+        # Top bar: status label, language selector and rescan button.
         top_bar = QHBoxLayout()
-        self.lbl_status = QLabel("已加载模块: 0")
+        self.lbl_status = QLabel(self._status_text())
         self.lbl_status.setStyleSheet("color: #666; font-size: 12px;")
 
-        btn_reload = QPushButton("🔄 重新扫描加载模块")
-        btn_reload.setToolTip("往 addons 文件夹放入新模块后，点击此按钮即可立即生效")
-        btn_reload.setStyleSheet("padding: 3px 8px; font-weight: bold;")
-        btn_reload.clicked.connect(self.load_all_addons)
+        self.lang_combo = QComboBox()
+        self.lang_combo.addItems(["🌐 English", "🌐 中文"])
+        self.lang_combo.setCurrentIndex(1 if current_language() == LANG_ZH else 0)
+        self.lang_combo.setFixedWidth(110)
+        self.lang_combo.setToolTip(tr("界面语言：切换后立即重新加载全部模块",
+                                      "Interface language: reloads every module instantly"))
+        self.lang_combo.activated.connect(self.on_language_changed)
+
+        self.btn_reload = QPushButton(tr("🔄 重新扫描加载模块", "🔄 Rescan addons"))
+        self.btn_reload.setToolTip(tr("往 addons 文件夹放入新模块后，点击此按钮即可立即生效",
+                                      "Drop a new module into addons/ and click to load it instantly"))
+        self.btn_reload.setStyleSheet("padding: 3px 8px; font-weight: bold;")
+        self.btn_reload.clicked.connect(self.load_all_addons)
 
         top_bar.addWidget(self.lbl_status)
         top_bar.addStretch()
-        top_bar.addWidget(btn_reload)
+        top_bar.addWidget(self.lang_combo)
+        top_bar.addWidget(self.btn_reload)
         main_layout.addLayout(top_bar)
 
-        # Tab 页容器
+        # Tab pages.
         self.tabs = QTabWidget()
         self.tabs.setTabPosition(QTabWidget.North)
         self.tabs.setUsesScrollButtons(True)
@@ -114,11 +173,25 @@ class ProToolboxPlugin:
         self.dock_widget.setWidget(main_container)
         self.dock_widget.resize(400, 650)
 
-        # 扫描并加载所有子模块
+        # Scan and mount every addon module.
         self.load_all_addons()
 
+    # ------------------------------------------------------------------
+    # Addon engine
+    # ------------------------------------------------------------------
+    def unload_all_addons(self):
+        """Ask every addon to release timers / shortcuts / threads, then drop tabs."""
+        for addon in self.loaded_addons:
+            try:
+                addon.unload()
+            except Exception as e:
+                print(f"[ProToolbox] Failed to unload {addon.title}: {e}")
+        self.loaded_addons.clear()
+        if self.tabs:
+            self.tabs.clear()
+
     def load_all_addons(self):
-        """核心引擎：自动读取 addons 文件夹下的所有 .py 文件并生成 Tab 页"""
+        """Scan addons/*.py, instantiate every addon and rebuild the tab pages."""
         self.unload_all_addons()
 
         if not os.path.exists(self.addons_dir):
@@ -143,10 +216,11 @@ class ProToolboxPlugin:
                         addon_classes.append(obj)
             except Exception as e:
                 self.iface.messageBar().pushMessage(
-                    "模块读取失败", f"{filename} 存在错误: {e}", level=Qgis.Warning, duration=5
+                    tr("模块读取失败", "Failed to read addon"), f"{filename}: {e}",
+                    level=Qgis.Warning, duration=5
                 )
 
-        # 按 order 数字从小到大排序
+        # Sort by the numeric ``order`` attribute (lowest first).
         addon_classes.sort(key=lambda cls: getattr(cls, 'order', 99))
 
         for cls in addon_classes:
@@ -158,7 +232,9 @@ class ProToolboxPlugin:
                 self.loaded_addons.append(addon_instance)
             except Exception as e:
                 self.iface.messageBar().pushMessage(
-                    "模块启动失败", f"{getattr(cls, 'title', cls.__name__)} 报错: {e}", level=Qgis.Critical, duration=5
+                    tr("模块启动失败", "Failed to start addon"),
+                    f"{getattr(cls, 'title', cls.__name__)}: {e}",
+                    level=Qgis.Critical, duration=5
                 )
 
-        self.lbl_status.setText(f"已加载模块: {len(self.loaded_addons)} 个")
+        self.lbl_status.setText(self._status_text())
