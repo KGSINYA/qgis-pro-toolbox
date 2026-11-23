@@ -20,7 +20,29 @@
 
 </div>
 
-> **English** — Pro Toolbox is a hot-swappable addon shell for QGIS: one 32-line `BaseAddon` contract, a runtime scanner, and offline wheels. Drop a `.py` file into `addons/`, click **Rescan**, and a new tab appears without restarting QGIS. Six production modules ship in the box: crash-proof autosave with one-click restore, arrow-key layer cycling, numpad macro input, semi-automatic QA/QC, table-to-point mapping with batch map export, and template-driven Word reports. No network calls, no telemetry.
+> **English** — Pro Toolbox is a hot-swappable addon shell for QGIS: one 32-line `BaseAddon` contract, a runtime scanner, and offline wheels. Drop a `.py` file into `addons/`, click **Rescan**, and a new tab appears without restarting QGIS. Eight production modules ship in the box — crash-proof autosave with one-click restore, arrow-key layer cycling, numpad macro input, semi-automatic QA/QC, table-to-point mapping with batch map export, template-driven Word reports, a raster NoData cleaner and an AI module studio — on top of a folder-based module library with bookmarks. No network calls, no telemetry.
+
+> **Pro Toolbox** 是一个热插拔插件外壳：一份 32 行的 `BaseAddon` 契约、一个运行时扫描器、一组离线 wheel。把 `.py` 丢进 `addons/`，点一下 **重新扫描**，新 Tab 立刻出现，无需重启 QGIS。内置 8 个生产模块：防崩自动存档与一键回溯、方向键图层轮播、小键盘宏文本录入、半自动质检、表格转点与批量出图、Word 模板报表、影像去黑边与匀光、AI 模块工坊；再配上一套按文件夹分类的模块库与书签栏。不联网、不埋点。
+
+---
+
+## 🆕 v1.1.0 重磅特性
+
+**✨ 99 · AI 模块创造工坊 —— 把「我只要一个小按钮」变成 30 秒的事**
+
+用一句话描述你要的工具，复制工坊生成的「基座契约提示词」，把 AI 产出的代码粘回来；插件先用 AST 预检、再热挂载成新 Tab。不重启、不开编辑器、不打包。生成模块天生使用与官方模块一致的 `BaseAddon` + `tr()` 契约，重扫和语言切换都不会丢。
+
+**🔖 左侧分类书签栏 & 工作区管理器 —— 把模块摊子收成图书馆**
+
+模块可以放进 `addons/` 下的分类子文件夹（`01_通用核心模块`、`02_遥感影像处理`……）。可折叠侧栏列出工作区与分类，用 `📌` 常驻日常主力模块，用勾选框免剪切启停，还能上下拖动排序。全部状态存在 `addons/workspace_config.json` —— 只在本机，不入库、不进包。
+
+**🖼️ 07 · 影像去黑边与匀光 —— 干掉正射影像的黑边领口**
+
+对扫描/镶嵌 TIF 的黑边、白边做 NoData 填充，把指定 RGB 精确透明化；监听新导入影像自动处理，并用平滑重采样避免边缘锯齿。
+
+**🧪 一套真正会跑的冒烟测试**
+
+`tests/test_plugin_smoke.py` 无头启动 QGIS，挂载全部 8 个模块，检查每个 Tab 的 UI 非空，跑通分类过滤、子文件夹发现、工作区持久化与中英切换。发版前先跑它。
 
 ---
 
@@ -60,6 +82,9 @@
 | 04 | ✅ **半自动质检** | `F4`（可选 `F5` / `Space` / `F8`） | 质检流程靠翻页与肉眼 | 初始化 `QA_Status` 字段 → 标记合格 → 自动跳下一个未检要素 |
 | 05 | 📊 **表格转点 & 批量出图** | Dock 面板 | Excel 坐标 → 成图，跨软件搬运 | 坐标跳转、度分秒解析、经纬填反纠错、图面取点；CSV/XLSX 转点、导出 SHP、批量出图 |
 | 06 | 📝 **Word 报表** | Dock 面板 | 每期报表重复排版 | 读取 `.docx` 模板首行表头，按列映射「矢量字段 / 外部图片」，逐要素填充 |
+| 07 | 🖼️ **影像去黑边与匀光** | Dock 面板 | 正射影像黑边/白边、边缘发虚 | NoData 填充、精确 RGB 透明、自动监听新图层、平滑重采样与对比度拉伸 |
+| 99 | ✨ **AI 模块工坊** | Dock 面板 | 等别人给你写那个小工具 | 生成契约提示词 → 粘贴代码 → AST 预检 → 一键热挂载，无需重启 |
+| — | 🔖 **模块库与工作区** | 侧栏 | 模块越装越乱、每个项目要不同工具集 | 分类子文件夹、`📌` 常驻、勾选启停、拖动排序、工作区预设（仅本地 JSON） |
 | — | 🌐 **中英双语界面** | Dock 顶部 | 中英文用户混用的团队 | 一键切换全部 Tab、按钮与提示的语言；模块就地重载，偏好会被记住 |
 
 ### 技术规格
@@ -134,8 +159,13 @@ pro_toolbox/
 │   ├── 04_qaqc.py
 │   ├── 05_excel_map.py
 │   ├── 06_word_report.py
-│   └── _template_addon.py  # 模板：下划线开头不会被加载
+│   ├── 07_raster_cleaner.py
+│   ├── 99_module_studio.py
+│   ├── _template_addon.py  # 模板：下划线开头不会被加载
+│   └── 01_通用核心模块/ …   # 分类子文件夹（首次运行自动创建）
 ├── libs/                   # 离线 wheel（解压产物不入库）
+├── tests/
+│   └── test_plugin_smoke.py  # 无头 QGIS 冒烟测试
 └── docs/
     ├── banner.svg
     └── security-audit.md   # 开源前脱敏审计报告
@@ -151,10 +181,10 @@ pro_toolbox/
 
 ## 🧩 3 分钟扩展指南
 
-新建 `addons/07_hello.py`，就这 15 行：
+新建 `addons/08_hello.py`，就这 15 行：
 
 ```python
-# addons/07_hello.py   ← 文件名不能以 "_" 开头，否则会被加载器跳过
+# addons/08_hello.py   ← 文件名不能以 "_" 开头，否则会被加载器跳过
 from qgis.PyQt.QtWidgets import QVBoxLayout, QLabel
 from base_addon import BaseAddon, tr
 
@@ -330,8 +360,9 @@ A：可以。除 `03 小键盘宏`（依赖 Win32 API，会自动隐藏）外，
 ## 🗺 Roadmap
 
 - [x] `1.0.0` 首个公开版本：6 个生产模块 + 热插拔加载器
+- [x] `1.1.0` 按文件夹分类的模块库与书签栏、工作区预设与模块管理器、影像去黑边、AI 模块工坊、无头冒烟测试
+- [x] 模块启用 / 禁用开关与配置持久化
 - [ ] QGIS 4 / Qt6 适配
-- [ ] 模块启用 / 禁用开关与配置持久化
 - [ ] 自动存档的差异备份（仅存变更要素）
 - [ ] 中英文界面双语化
 

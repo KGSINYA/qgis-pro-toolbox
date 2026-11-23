@@ -20,7 +20,27 @@
 
 </div>
 
-> **Pro Toolbox** is a hot-swappable addon shell for QGIS: one 32-line `BaseAddon` contract, a runtime scanner, and offline wheels. Drop a `.py` file into `addons/`, click **Rescan**, and a new tab appears without restarting QGIS. Six production modules ship in the box: crash-proof autosave with one-click restore, arrow-key layer cycling, numpad macro input, semi-automatic QA/QC, table-to-point mapping with batch map export, and template-driven Word reports. No network calls, no telemetry.
+> **Pro Toolbox** is a hot-swappable addon shell for QGIS: one 32-line `BaseAddon` contract, a runtime scanner, and offline wheels. Drop a `.py` file into `addons/`, click **Rescan**, and a new tab appears without restarting QGIS. Eight production modules ship in the box — crash-proof autosave with one-click restore, arrow-key layer cycling, numpad macro input, semi-automatic QA/QC, table-to-point mapping with batch map export, template-driven Word reports, a raster NoData cleaner and an AI module studio — on top of a folder-based module library with bookmarks. No network calls, no telemetry.
+
+---
+
+## 🆕 What's new in v1.1.0
+
+**✨ 99 · AI Module Studio — close the "I just need one tiny button" loop in 30 seconds**
+
+Describe the tool in one sentence, copy the contract-perfect prompt, paste the AI-generated code back, and Pro Toolbox AST-checks it and hot-mounts it as a new tab — no restart, no editor, no packaging. The generated module already speaks the same `BaseAddon` + `tr()` contract as the official ones, so it survives rescans and language switches.
+
+**🔖 Bookmark sidebar & workspace manager — turn module sprawl into a library**
+
+Modules can live in category folders under `addons/` (`01_通用核心模块`, `02_遥感影像处理`, …). The collapsible sidebar lists workspaces and categories, pins your daily drivers with `📌`, toggles modules on and off with a checkbox, and drags the order around. Everything is stored in `addons/workspace_config.json` — local only, never committed and never packaged.
+
+**🖼️ 07 · Raster NoData cleaner — kill the black collar on georeferenced imagery**
+
+Fill NoData for the black/white borders of scanned or mosaicked TIFs, make exact RGB colours transparent, watch newly added rasters and clean them automatically, and resample with a smooth kernel so the edge does not turn into a staircase.
+
+**🧪 A real smoke test suite**
+
+`tests/test_plugin_smoke.py` boots QGIS headless, mounts all eight modules, checks every tab has a non-empty UI, exercises category filtering, sub-folder discovery, workspace persistence and the CN/EN switch. Run it before you tag a release.
 
 ---
 
@@ -60,6 +80,9 @@ Every interaction is designed around "hands on the keyboard, eyes on the canvas"
 | 04 | ✅ **Semi-automatic QA/QC** | `F4` (or `F5` / `Space` / `F8`) | Manual page-turning QA | Initializes `QA_Status`, marks the selected feature, jumps to the next unchecked one |
 | 05 | 📊 **Table to points & batch maps** | Dock panel | Excel coordinates to points to maps, across apps | Coordinate jump, DMS parsing, lon/lat swap correction, pick on canvas; CSV/XLSX → points, SHP export, batch map export |
 | 06 | 📝 **Word reports** | Dock panel | Rebuilding the same report every cycle | Reads the first table header of a `.docx` template, maps columns to vector fields or external images, fills one row per feature |
+| 07 | 🖼️ **Raster NoData cleaner** | Dock panel | Black/white collars on georeferenced imagery | NoData fill, exact-RGB transparency, auto-watch new rasters, resampling and contrast stretch |
+| 99 | ✨ **AI Module Studio** | Dock panel | Waiting on someone to code the one tiny tool you need | Contract prompt → paste code → AST pre-check → hot mount, no restart |
+| — | 🔖 **Module library & workspaces** | Sidebar | Module sprawl and per-project tool sets | Category folders, `📌` pin, checkbox enable/disable, drag reorder, workspace presets (local JSON only) |
 | — | 🌐 **Bilingual UI** | Dock header | Mixed-language teams and reviewers | One click flips every tab, label and message between 中文 and English; addons reload in place and the choice is remembered |
 
 ### Technical specs
@@ -134,8 +157,13 @@ pro_toolbox/
 │   ├── 04_qaqc.py
 │   ├── 05_excel_map.py
 │   ├── 06_word_report.py
-│   └── _template_addon.py  # template: leading underscore is never loaded
+│   ├── 07_raster_cleaner.py
+│   ├── 99_module_studio.py
+│   ├── _template_addon.py  # template: leading underscore is never loaded
+│   └── 01_通用核心模块/ …   # optional category folders (created on first run)
 ├── libs/                   # offline wheels (unpacked files are not committed)
+├── tests/
+│   └── test_plugin_smoke.py  # headless QGIS smoke suite
 └── docs/
     ├── banner.svg
     └── security-audit.md   # pre-release privacy audit
@@ -151,10 +179,10 @@ pro_toolbox/
 
 ## 🧩 Build an addon in 3 minutes
 
-Create `addons/07_hello.py` — all it takes is these 15 lines:
+Create `addons/08_hello.py` — all it takes is these 15 lines:
 
 ```python
-# addons/07_hello.py   ← the file name must not start with "_", or the loader skips it
+# addons/08_hello.py   ← the file name must not start with "_", or the loader skips it
 from qgis.PyQt.QtWidgets import QVBoxLayout, QLabel
 from base_addon import BaseAddon, tr
 
@@ -337,8 +365,9 @@ A: Yes. Only `03 Numpad macros` depends on the Win32 API and hides itself automa
 ## 🗺 Roadmap
 
 - [x] `1.0.0` first public release: six production modules + hot-swappable loader
+- [x] `1.1.0` folder-based module library with bookmark sidebar, workspace presets & module manager, raster NoData cleaner, AI Module Studio, headless smoke tests
+- [x] Per-addon enable/disable switches with persisted settings
 - [ ] QGIS 4 / Qt6 support
-- [ ] Per-addon enable/disable switches with persisted settings
 - [ ] Differential autosave (store only changed features)
 - [ ] Translation packs (`.qm` / `zh_CN` etc.)
 

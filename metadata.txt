@@ -3,7 +3,7 @@ name=Pro Toolbox
 qgisMinimumVersion=3.16
 qgisMaximumVersion=3.99
 description=A hot-swappable toolbox for high-frequency GIS digitizing: crash-proof auto-save and restore, arrow-key layer cycling, numpad macro input, QA/QC pass-through, table-to-point mapping with batch map export, template-driven Word reports, and a bilingual (中文 / English) UI switchable at runtime. 面向高频矢量数字化生产的热插拔式提效工具箱，界面支持中英文一键切换。
-version=1.0.0
+version=1.1.0
 author=KGSINYA
 email=kgsinya@163.com
 about=Pro Toolbox is a hot-swappable micro-kernel base for high-throughput GIS production workflows. Every feature is a standalone file under addons/ and is discovered at runtime: drop a file in, click Rescan, and a new tab appears without restarting QGIS. Python dependencies ship as offline wheels in libs/ and are unpacked on first run, so python-docx works on air-gapped intranets with zero pip configuration.
@@ -14,6 +14,8 @@ about=Pro Toolbox is a hot-swappable micro-kernel base for high-throughput GIS p
     界面：运行时双语。每个界面字符串只写一次 tr("中文", "English")，Dock 顶部的 🌐 选择器即时切换全部模块并记住选择；无需重启，也无需 .ts/.qm 编译流程。
     版本说明：libs/ 同时内置 cp39（QGIS ≤ 3.39 / Python 3.9）与 cp312（QGIS ≥ 3.40 / Python 3.12）两个 lxml wheel，加载时按当前解释器自动选择；其余 5 个模块完全不依赖 libs/。
     内置模块：定时 GPKG 自动存档（版本轮转 + 一键回溯）；方向键图层轮播（画布 OSD 提示）；小键盘宏文本注入（Win32 热键，规避 QGIS 快捷键冲突）；半自动质检流水线（状态字段初始化 + 自动跳转下一未检要素）；Excel/CSV 表格转点与批量出图（坐标跳转、度分秒解析）；Word 模板报表生成（字段/图片逐列映射）。
+    1.1.0 新增：按子文件夹分类的模块库与可折叠书签栏、工作区预设与模块管理器（常驻置顶 / 勾选启停 / 上下排序）；影像去黑边与匀光组件（NoData 批量清理、新图层自动监听、平滑重采样）；AI 模块工坊（生成契约提示词 → 粘贴代码 AST 预检 → 一键热挂载，无需重启）。
+    New in 1.1.0: a folder-based module library with an optional bookmark sidebar, workspace presets and a module manager (pin, enable/disable, reorder); a raster NoData / black-border cleaner with auto-watch and resampling; and the AI Module Studio that generates a contract-perfect prompt, AST-checks pasted code and hot-mounts the new tool without restarting QGIS.
     Privacy: no network access, no telemetry. Project data and generated files never leave your machine.
 tracker=https://github.com/KGSINYA/qgis-pro-toolbox/issues
 repository=https://github.com/KGSINYA/qgis-pro-toolbox
@@ -23,5 +25,6 @@ category=Vector
 icon=icon.png
 experimental=False
 deprecated=False
-changelog=1.0.0
-    First public release: hot-swappable addon loader, auto-save with version rotation and one-click restore, arrow-key layer cycling, numpad macro input, QA/QC pass-through, table-to-point mapping with batch map export, and template-driven Word reports.
+changelog=1.1.0
+    1.1.0: folder-based addon discovery with optional bookmark sidebar; workspace presets, pinned core modules and a module manager (enable/disable, reorder); raster NoData / black-border cleaner with auto-watch and resampling; AI Module Studio with contract prompt, AST pre-check and hot mount; tests/ smoke suite; version bumped to 1.1.0.
+    1.0.0: First public release: hot-swappable addon loader, auto-save with version rotation and one-click restore, arrow-key layer cycling, numpad macro input, QA/QC pass-through, table-to-point mapping with batch map export, and template-driven Word reports.

@@ -47,6 +47,8 @@ libs/_extracted/
 Backup_*/
 # 小键盘宏的本地配置，可能含业务文本，绝不入库
 numpad_macro_config.json
+# 模块管理器 / 工作区在运行时写入的个人视图配置，绝不入库也不进包
+addons/workspace_config.json
 # 打包产物
 *.zip
 # QGIS 打开项目时生成的自定义符号库，属于本机文件，不入库也不进包

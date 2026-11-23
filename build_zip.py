@@ -68,6 +68,7 @@ EXCLUDED_DIRS = {
     "env",
     "docs",  # excluded by default; --with-docs enables it (see collect_files)
     "assets",  # repo-only branding shown by the README, not a runtime asset
+    "tests",   # developer smoke tests live in the repository, not in the runtime
 }
 
 # Files skipped anywhere in the tree
@@ -77,6 +78,7 @@ EXCLUDED_FILES = {
     ".gitmodules",
     "build_zip.py",           # build tooling is not part of the runtime
     "numpad_macro_config.json",  # local macro config, may contain business text
+    "workspace_config.json",     # local workspace/bookmark state, never shipped
     "desktop.ini",
     ".DS_Store",
     "Thumbs.db",
