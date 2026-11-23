@@ -2,7 +2,7 @@
 name=Pro Toolbox
 qgisMinimumVersion=3.16
 qgisMaximumVersion=3.99
-description=A hot-swappable toolbox for high-frequency GIS digitizing: crash-proof auto-save and restore, arrow-key layer cycling, numpad macro input, QA/QC pass-through, table-to-point mapping with batch map export, template-driven Word reports, and a bilingual (中文 / English) UI switchable at runtime. 面向高频矢量数字化生产的热插拔式提效工具箱，界面支持中英文一键切换。
+description=A hot-swappable toolbox for high-frequency GIS digitizing: crash-proof auto-save and restore, arrow-key layer cycling, numpad macro input, QA/QC pass-through, table-to-point mapping with batch map export, template-driven Word reports, a raster NoData cleaner, an AI module studio and a folder-based module/workspace manager, with a bilingual (中文 / English) UI switchable at runtime. 面向高频矢量数字化与遥感制图的热插拔式提效工具箱：防崩自动存档、图层快捷键切换、小键盘宏录入、半自动质检、表格转点批量出图、Word 模板报表、影像去黑边、AI 模块工坊与模块分类工作区管理，界面支持中英文一键切换。
 version=1.1.0
 author=KGSINYA
 email=kgsinya@163.com
@@ -20,7 +20,7 @@ about=Pro Toolbox is a hot-swappable micro-kernel base for high-throughput GIS p
 tracker=https://github.com/KGSINYA/qgis-pro-toolbox/issues
 repository=https://github.com/KGSINYA/qgis-pro-toolbox
 homepage=https://github.com/KGSINYA/qgis-pro-toolbox
-tags=automation,digitizing,workflow,hot-reload,report,vector
+tags=automation,digitizing,workflow,hot-reload,report,vector,raster,nodata,ai,workspace
 category=Vector
 icon=icon.png
 experimental=False

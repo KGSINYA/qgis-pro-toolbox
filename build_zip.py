@@ -128,7 +128,7 @@ def is_libs_artifact(rel: Path) -> bool:
     return bool(rel.parts) and rel.parts[0] == "libs" and rel.suffix.lower() != ".whl"
 
 
-def collect_files(root: Path, with_docs: bool, keep_libs: bool):
+def collect_files(root: Path, with_docs: bool, keep_libs: bool, include_wheels: bool = True):
     """Return (files to pack, number of skipped entries)."""
     files, skipped = [], 0
 
@@ -160,6 +160,9 @@ def collect_files(root: Path, with_docs: bool, keep_libs: bool):
                 skipped += 1
                 continue
             if name.startswith("Backup_"):
+                skipped += 1
+                continue
+            if rel.parts and rel.parts[0] == "libs" and not include_wheels:
                 skipped += 1
                 continue
             if is_libs_artifact(rel) and not keep_libs:
@@ -220,6 +223,7 @@ def main() -> None:
     ap.add_argument("--output", default=None, help="output ZIP path (default: dist/<name>-<version>.zip)")
     ap.add_argument("--with-docs", action="store_true", help="include docs/")
     ap.add_argument("--keep-libs", action="store_true", help="keep unpacked dependencies under libs/ (only *.whl by default)")
+    ap.add_argument("--no-libs", action="store_true", help="drop libs/*.whl as well (light build)")
     ap.add_argument("--dry-run", "--list", dest="dry_run", action="store_true", help="list files without writing a ZIP")
     args = ap.parse_args()
 
@@ -241,7 +245,7 @@ def main() -> None:
     if missing_required:
         sys.exit("[ERROR] Missing files required for release: %s" % ", ".join(missing_required))
 
-    files, skipped = collect_files(root, args.with_docs, args.keep_libs)
+    files, skipped = collect_files(root, args.with_docs, args.keep_libs, include_wheels=not args.no_libs)
     if not files:
         sys.exit("[ERROR] No files collected")
 
