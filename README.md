@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.png" width="96" alt="Pro Toolbox logo">
+
 <img src="docs/banner.svg" alt="Pro Toolbox — hot-swappable QGIS production toolbox" width="100%">
 
 [English](./README.md) | [简体中文](./README_zh.md)
@@ -118,6 +120,10 @@ pro_toolbox/
 ├── LICENSE                 # full GPL-3.0 text (no extension, as required)
 ├── NOTICE                  # copyright and third-party licenses
 ├── icon.png                # plugin icon (declared in metadata)
+├── icon.svg                # vector master of the plugin icon
+├── assets/
+│   ├── logo.png            # 512 px brand mark used by this README
+│   └── logo.svg            # vector master of the README logo
 ├── build_zip.py            # one-command packaging into an uploadable ZIP
 ├── README.md               # this file (English)
 ├── README_zh.md            # the same document in Chinese

@@ -6,6 +6,7 @@ import importlib
 import importlib.util
 
 from qgis.PyQt.QtCore import Qt
+from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import (QDockWidget, QWidget, QVBoxLayout, QHBoxLayout,
                                  QPushButton, QLabel, QTabWidget, QAction, QComboBox)
 from qgis.core import Qgis
@@ -78,6 +79,7 @@ class ProToolboxPlugin:
     def initGui(self):
         """Called by QGIS when the plugin is enabled."""
         self.action = QAction(tr("🛠️ Pro Toolbox 生产提效工具箱", "🛠️ Pro Toolbox"), self.iface.mainWindow())
+        self.action.setIcon(self._plugin_icon())
         self.action.triggered.connect(self.toggle_window)
         self.iface.addPluginToMenu("Pro Toolbox", self.action)
         self.iface.addToolBarIcon(self.action)
@@ -98,6 +100,11 @@ class ProToolboxPlugin:
     # ------------------------------------------------------------------
     # Small helpers shared by the language switch
     # ------------------------------------------------------------------
+    def _plugin_icon(self):
+        """Return the plugin icon used by the toolbar action and the dock window."""
+        icon_path = os.path.join(self.plugin_dir, "icon.png")
+        return QIcon(icon_path) if os.path.exists(icon_path) else QIcon()
+
     def _dock_title(self):
         return tr("Pro Toolbox 生产提效工具箱", "Pro Toolbox")
 
@@ -162,6 +169,7 @@ class ProToolboxPlugin:
     def build_ui(self):
         """Build the dock: status bar, language selector, rescan button, tabs."""
         self.dock_widget = QDockWidget(self._dock_title(), self.iface.mainWindow())
+        self.dock_widget.setWindowIcon(self._plugin_icon())
         self.dock_widget.setAllowedAreas(Qt.AllDockWidgetAreas)
 
         def on_floating_changed(is_floating):

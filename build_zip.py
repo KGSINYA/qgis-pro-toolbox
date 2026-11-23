@@ -67,6 +67,7 @@ EXCLUDED_DIRS = {
     "venv",
     "env",
     "docs",  # excluded by default; --with-docs enables it (see collect_files)
+    "assets",  # repo-only branding shown by the README, not a runtime asset
 }
 
 # Files skipped anywhere in the tree

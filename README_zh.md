@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="assets/logo.png" width="96" alt="Pro Toolbox 图标">
+
 <img src="docs/banner.svg" alt="Pro Toolbox — 热插拔式 QGIS 生产提效工具箱" width="100%">
 
 [English](./README.md) | [简体中文](./README_zh.md)
@@ -118,6 +120,10 @@ pro_toolbox/
 ├── LICENSE                 # GPL-3.0 全文（无扩展名，官方要求）
 ├── NOTICE                  # 版权声明与第三方依赖许可
 ├── icon.png                # 插件图标（metadata 中声明）
+├── icon.svg                # 插件图标的矢量母版
+├── assets/
+│   ├── logo.png            # README 使用的 512 px 品牌图
+│   └── logo.svg            # README 品牌图的矢量母版
 ├── build_zip.py            # 一键打包为可上传的 ZIP
 ├── README.md               # 英文文档
 ├── README_zh.md            # 本文件（中文文档）
